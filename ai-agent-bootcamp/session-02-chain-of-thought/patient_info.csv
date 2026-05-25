@@ -1,0 +1,2 @@
+﻿patient_id,name,age,gender,symptoms,chronic_conditions,medications,allergies,family_history,surgeries,social_smoking,social_alcohol,social_exercise
+1,John Doe,45,Male,"Persistent headache (3 weeks, worse in morning); Occasional dizziness when standing; Blurred vision (right eye); Fatigue (not improving with rest); Unintentional weight loss (5 lbs in 1 month)",Hypertension (diagnosed 5 years ago),Lisinopril 10mg daily,Penicillin,Father had stroke at 65; Mother with type 2 diabetes,Appendectomy (15 years ago),Never,Occasional (1-2 drinks/week),Minimal

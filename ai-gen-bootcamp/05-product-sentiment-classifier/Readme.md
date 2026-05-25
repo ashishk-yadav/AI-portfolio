@@ -1,0 +1,30 @@
+# Product Review Summary and Sentiment Classification
+### IDE 
+Download Pycharm: https://www.jetbrains.com/pycharm/download/?section=windows or https://www.jetbrains.com/pycharm/download/?section=mac 
+
+### How to use Pycharm
+1. Open pycharm and create new project
+ <img width="248" height="310" alt="image" src="https://github.com/user-attachments/assets/bddc76a3-f0b5-4c47-b74d-2a6be0dff2c9" />
+
+2. Create Virtual env with python3.12
+<img width="637" height="320" alt="image" src="https://github.com/user-attachments/assets/a338e946-785d-4caa-9d2e-6beb5a93a6b9" />
+
+
+
+### Setup
+1. Open Pycharm and create virtual environment using python3.12
+2. `pip install -r requirements.txt`
+3. [Get OpenAI API key](https://platform.openai.com/)
+4. [Get scraping API key](https://www.scrapingdog.com/)
+5. Create .env file inside project and paste `OPENAI_API_KEY="sk-..."` in your .env
+6. First run inti_db.py to setup the database
+7. `streamlit run app.py`
+
+
+### Features
+
+- Fetch review data from CSV/Database/URL/text box
+- Summarize product review
+- Identify overall sentiment and review level sentiment
+- Generate emoji for sentiment
+

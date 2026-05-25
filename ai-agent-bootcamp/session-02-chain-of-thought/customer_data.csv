@@ -1,0 +1,2 @@
+customer_id,name,account_type,subscription_status,billing_cycle,last_payment_date,account_creation_date,recent_support_issues
+C1234567,Sarah Johnson,Premium,Active,Monthly,2025-03-15,2023-07-22,"[{""date"": ""2025-02-10"", ""topic"": ""Login Problems"", ""resolved"": true}, {""date"": ""2025-01-05"", ""topic"": ""Billing Question"", ""resolved"": true}]"

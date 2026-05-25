@@ -1,0 +1,6 @@
+product_id,name,category,unit_cost,selling_price,min_stock,current_stock
+P001,Premium Bluetooth Headphones,Electronics,85.0,149.99,20,32
+P002,Wireless Phone Charger,Electronics,18.5,34.99,30,18
+P003,Smart Watch Series 5,Electronics,110.0,199.99,15,8
+P004,Organic Cotton T-Shirt,Apparel,12.5,29.99,50,85
+P005,Yoga Mat Premium,Fitness,18.0,39.99,25,22

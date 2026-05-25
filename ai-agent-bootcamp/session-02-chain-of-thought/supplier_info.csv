@@ -1,0 +1,5 @@
+supplier_id,name,categories,lead_time_days,min_order_qty,reliability_score,payment_terms
+S001,TechSupply Inc.,Electronics,12,20,4.7,Net 30
+S002,QuickShip Electronics,Electronics,8,15,4.2,Net 15
+S003,EcoTextiles,Apparel,15,50,4.8,Net 45
+S004,FitnessPro Suppliers,Fitness,10,25,4.5,Net 30

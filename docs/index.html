@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ashish Yadav | AI Portfolio</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html { scroll-behavior: smooth; }
+
+    @keyframes gradientShift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .hero-bg {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 30%, #0c2340 55%, #0f172a 80%, #0a1628 100%);
+      background-size: 300% 300%;
+      animation: gradientShift 12s ease infinite;
+    }
+
+    @keyframes float1 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33%       { transform: translate(30px, -40px) scale(1.05); }
+      66%       { transform: translate(-20px, 20px) scale(0.95); }
+    }
+    @keyframes float2 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33%       { transform: translate(-40px, 30px) scale(1.08); }
+      66%       { transform: translate(25px, -20px) scale(0.92); }
+    }
+    @keyframes float3 {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      50%       { transform: translate(20px, 40px) scale(1.1); }
+    }
+    .orb-1 { animation: float1 14s ease-in-out infinite; }
+    .orb-2 { animation: float2 18s ease-in-out infinite; }
+    .orb-3 { animation: float3 10s ease-in-out infinite; }
+
+    .nav-scrolled {
+      background: rgba(15, 23, 42, 0.92) !important;
+      box-shadow: 0 1px 20px rgba(0,0,0,0.4);
+    }
+
+    .project-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      cursor: pointer;
+    }
+    .project-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 30px rgba(59,130,246,0.25);
+    }
+
+    .skill-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .skill-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 24px rgba(6,182,212,0.2);
+    }
+
+    .modal-overlay {
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(4px);
+    }
+
+    .filter-tab.active {
+      background: #3b82f6;
+      color: #fff;
+      border-color: #3b82f6;
+    }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
+
+    @keyframes pulse-badge {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.7; }
+    }
+    .badge-pulse { animation: pulse-badge 2.5s ease-in-out infinite; }
+
+    .fade-in-section {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .fade-in-section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .skill-pill {
+      display: inline-block;
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid rgba(71, 85, 105, 0.6);
+      color: #94a3b8;
+      font-size: 0.75rem;
+      font-weight: 500;
+      transition: background 0.15s, color 0.15s;
+    }
+    .skill-pill:hover {
+      background: rgba(59, 130, 246, 0.15);
+      border-color: rgba(59, 130, 246, 0.4);
+      color: #93c5fd;
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased">
+
+<!-- NAV -->
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300 backdrop-blur-sm">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+      <a href="#" class="flex items-center gap-2 group">
+        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-sm font-bold text-white shadow-lg">AY</div>
+        <span class="font-semibold text-slate-100 hidden sm:block">Ashish Yadav <span class="text-slate-400 font-normal">| AI Portfolio</span></span>
+      </a>
+      <div class="hidden md:flex items-center gap-8">
+        <a href="#about"    class="text-sm text-slate-300 hover:text-blue-400 transition-colors">About</a>
+        <a href="#projects" class="text-sm text-slate-300 hover:text-blue-400 transition-colors">Projects</a>
+        <a href="#skills"   class="text-sm text-slate-300 hover:text-blue-400 transition-colors">Skills</a>
+        <a href="#contact"  class="text-sm text-slate-300 hover:text-blue-400 transition-colors">Contact</a>
+        <a href="https://github.com/YOUR_USERNAME" target="_blank" rel="noopener"
+           class="text-sm px-4 py-1.5 rounded-full border border-blue-500 text-blue-400 hover:bg-blue-500 hover:text-white transition-all">GitHub</a>
+      </div>
+      <button id="mobile-menu-btn" class="md:hidden text-slate-300 hover:text-white p-2" aria-label="Toggle menu">
+        <svg id="hamburger-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
+        </svg>
+        <svg id="close-icon" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <div id="mobile-menu" class="hidden md:hidden bg-slate-900/95 border-t border-slate-800 px-4 py-4">
+    <div class="flex flex-col gap-4">
+      <a href="#about"    class="text-slate-300 hover:text-blue-400 transition-colors" onclick="closeMobileMenu()">About</a>
+      <a href="#projects" class="text-slate-300 hover:text-blue-400 transition-colors" onclick="closeMobileMenu()">Projects</a>
+      <a href="#skills"   class="text-slate-300 hover:text-blue-400 transition-colors" onclick="closeMobileMenu()">Skills</a>
+      <a href="#contact"  class="text-slate-300 hover:text-blue-400 transition-colors" onclick="closeMobileMenu()">Contact</a>
+      <a href="https://github.com/YOUR_USERNAME" target="_blank" rel="noopener" class="text-blue-400 hover:text-blue-300">GitHub</a>
+    </div>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="about" class="relative min-h-screen flex items-center justify-center overflow-hidden hero-bg">
+  <div class="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+    <div class="orb-1 absolute top-1/4 left-1/4 w-80 h-80 rounded-full bg-blue-600/10 blur-3xl"></div>
+    <div class="orb-2 absolute bottom-1/3 right-1/4 w-96 h-96 rounded-full bg-cyan-500/8 blur-3xl"></div>
+    <div class="orb-3 absolute top-1/2 right-1/3 w-64 h-64 rounded-full bg-blue-400/6 blur-3xl"></div>
+    <div class="absolute inset-0 opacity-5"
+         style="background-image: linear-gradient(rgba(59,130,246,0.4) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.4) 1px, transparent 1px); background-size: 60px 60px;"></div>
+  </div>
+  <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center py-32">
+    <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-green-900/40 border border-green-700/50 text-green-400 text-sm mb-8">
+      <span class="w-2 h-2 rounded-full bg-green-400 badge-pulse"></span>
+      Open to new opportunities
+    </div>
+    <h1 class="text-5xl sm:text-6xl lg:text-7xl font-extrabold mb-4 leading-tight">
+      <span class="bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-500 bg-clip-text text-transparent">Ashish Yadav</span>
+    </h1>
+    <p class="text-xl sm:text-2xl text-slate-300 font-light mb-8 leading-relaxed">
+      Technical Product Manager &mdash;<br class="sm:hidden"/>
+      <span class="text-cyan-400 font-medium"> Enterprise AI &amp; Platform Modernization</span>
+    </p>
+    <p class="text-base sm:text-lg text-slate-400 max-w-3xl mx-auto leading-relaxed mb-10">
+      19+ years bridging enterprise platform strategy and hands-on AI execution. Former Senior Technical PM at Alight Solutions leading cloud-native SaaS delivery for Fortune 500 clients including Aon, Eli Lilly, and Rockwell Automation. Graduate of two AI bootcamps covering 24 projects across multi-agent systems, RAG pipelines, fine-tuning, computer vision, and NLP &mdash; building the technical depth to lead AI product development from concept to production.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+      <a href="#projects"
+         class="px-8 py-3 rounded-full bg-gradient-to-r from-blue-600 to-blue-500 text-white font-semibold hover:from-blue-500 hover:to-cyan-500 transition-all shadow-lg hover:shadow-blue-500/30 hover:-translate-y-0.5 transform">
+        View Projects &#8595;
+      </a>
+      <a href="https://github.com/YOUR_USERNAME" target="_blank" rel="noopener"
+         class="px-8 py-3 rounded-full border border-slate-600 text-slate-300 font-semibold hover:border-blue-500 hover:text-blue-400 transition-all hover:-translate-y-0.5 transform flex items-center justify-center gap-2">
+        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+        </svg>
+        GitHub
+      </a>
+    </div>
+    <div class="flex flex-wrap justify-center gap-3">
+      <span class="px-4 py-1.5 rounded-full bg-blue-900/50 border border-blue-700/50 text-blue-300 text-sm font-medium">PMP</span>
+      <span class="px-4 py-1.5 rounded-full bg-cyan-900/50 border border-cyan-700/50 text-cyan-300 text-sm font-medium">CSM</span>
+      <span class="px-4 py-1.5 rounded-full bg-indigo-900/50 border border-indigo-700/50 text-indigo-300 text-sm font-medium">Google Cloud Gen AI Leader</span>
+      <span class="px-4 py-1.5 rounded-full bg-sky-900/50 border border-sky-700/50 text-sky-300 text-sm font-medium">Azure AI Fundamentals</span>
+    </div>
+  </div>
+  <div class="absolute bottom-8 left-1/2 -translate-x-1/2 text-slate-500 animate-bounce">
+    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+    </svg>
+  </div>
+</section>
+
+<!-- PROJECTS -->
+<section id="projects" class="py-24 bg-slate-950 fade-in-section">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-14">
+      <div class="inline-flex items-center gap-2 text-blue-400 text-sm font-medium uppercase tracking-widest mb-3">
+        <span class="w-8 h-px bg-blue-500"></span>Portfolio<span class="w-8 h-px bg-blue-500"></span>
+      </div>
+      <h2 class="text-4xl sm:text-5xl font-bold text-white">AI Projects</h2>
+      <p class="text-slate-400 mt-4 max-w-xl mx-auto">24 hands-on projects spanning multi-agent systems, RAG, fine-tuning, computer vision, and NLP.</p>
+    </div>
+    <div class="flex flex-wrap justify-center gap-2 mb-10" id="filter-tabs" role="tablist" aria-label="Filter projects by domain">
+      <button class="filter-tab active px-5 py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white transition-all border border-slate-700" data-filter="ALL" role="tab">ALL</button>
+      <button class="filter-tab px-5 py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white transition-all border border-slate-700" data-filter="Enterprise B2B" role="tab">Enterprise B2B</button>
+      <button class="filter-tab px-5 py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white transition-all border border-slate-700" data-filter="HealthTech" role="tab">HealthTech</button>
+      <button class="filter-tab px-5 py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white transition-all border border-slate-700" data-filter="FinTech" role="tab">FinTech</button>
+      <button class="filter-tab px-5 py-2 rounded-full text-sm font-medium bg-slate-800 text-slate-300 hover:bg-blue-600 hover:text-white transition-all border border-slate-700" data-filter="General AI" role="tab">General AI</button>
+    </div>
+    <div id="project-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    <div id="no-results" class="hidden text-center py-20 text-slate-500">No projects found for this filter.</div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills" class="py-24 bg-slate-900 fade-in-section">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="text-center mb-14">
+      <div class="inline-flex items-center gap-2 text-cyan-400 text-sm font-medium uppercase tracking-widest mb-3">
+        <span class="w-8 h-px bg-cyan-500"></span>Capabilities<span class="w-8 h-px bg-cyan-500"></span>
+      </div>
+      <h2 class="text-4xl sm:text-5xl font-bold text-white">Technical Skills</h2>
+      <p class="text-slate-400 mt-4 max-w-xl mx-auto">A full-stack AI skill set from model training to enterprise delivery.</p>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+      <div class="skill-card bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-blue-900/60 flex items-center justify-center">
+            <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.347.347a3.5 3.5 0 00-1.5 2.06v.17a2 2 0 01-2 2h-1a2 2 0 01-2-2v-.17a3.5 3.5 0 00-1.5-2.06l-.347-.347z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-white">AI/ML Frameworks</h3>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <span class="skill-pill">AutoGen</span><span class="skill-pill">LangChain</span><span class="skill-pill">CrewAI</span>
+          <span class="skill-pill">OpenAI API</span><span class="skill-pill">HuggingFace</span><span class="skill-pill">PEFT/LoRA</span>
+          <span class="skill-pill">PyTorch</span><span class="skill-pill">TensorFlow</span><span class="skill-pill">scikit-learn</span>
+          <span class="skill-pill">BLIP</span><span class="skill-pill">Sentence Transformers</span>
+        </div>
+      </div>
+
+      <div class="skill-card bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-cyan-900/60 flex items-center justify-center">
+            <svg class="w-5 h-5 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-white">Agentic &amp; RAG</h3>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <span class="skill-pill">Multi-Agent Systems</span><span class="skill-pill">RAG Pipelines</span>
+          <span class="skill-pill">ChromaDB</span><span class="skill-pill">FAISS</span>
+          <span class="skill-pill">LangSmith</span><span class="skill-pill">Tool Use</span>
+          <span class="skill-pill">Chain-of-Thought Prompting</span>
+        </div>
+      </div>
+
+      <div class="skill-card bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-indigo-900/60 flex items-center justify-center">
+            <svg class="w-5 h-5 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-white">Cloud &amp; Infrastructure</h3>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <span class="skill-pill">Azure AI Foundry</span><span class="skill-pill">GCP Vertex AI</span>
+          <span class="skill-pill">Docker</span><span class="skill-pill">Kubernetes</span>
+          <span class="skill-pill">AWS basics</span>
+        </div>
+      </div>
+
+      <div class="skill-card bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-emerald-900/60 flex items-center justify-center">
+            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-white">Data &amp; Analytics</h3>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <span class="skill-pill">Python</span><span class="skill-pill">SQL/SQLite</span>
+          <span class="skill-pill">Pandas</span><span class="skill-pill">PowerBI</span>
+          <span class="skill-pill">Tableau</span><span class="skill-pill">Streamlit</span>
+        </div>
+      </div>
+
+      <div class="skill-card bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-orange-900/60 flex items-center justify-center">
+            <svg class="w-5 h-5 text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-white">APIs &amp; Integration</h3>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <span class="skill-pill">OpenAI API</span><span class="skill-pill">HL7/FHIR</span>
+          <span class="skill-pill">REST APIs</span><span class="skill-pill">Selenium</span>
+          <span class="skill-pill">BeautifulSoup</span><span class="skill-pill">yfinance</span>
+        </div>
+      </div>
+
+      <div class="skill-card bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6">
+        <div class="flex items-center gap-3 mb-4">
+          <div class="w-10 h-10 rounded-xl bg-violet-900/60 flex items-center justify-center">
+            <svg class="w-5 h-5 text-violet-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+            </svg>
+          </div>
+          <h3 class="font-semibold text-white">Delivery &amp; PM</h3>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <span class="skill-pill">Jira</span><span class="skill-pill">GitHub</span>
+          <span class="skill-pill">Confluence</span><span class="skill-pill">Agile/Scrum</span>
+          <span class="skill-pill">PI Planning</span><span class="skill-pill">PMP</span>
+          <span class="skill-pill">CSM</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="py-24 bg-slate-950 fade-in-section">
+  <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+    <div class="inline-flex items-center gap-2 text-blue-400 text-sm font-medium uppercase tracking-widest mb-3">
+      <span class="w-8 h-px bg-blue-500"></span>Get In Touch<span class="w-8 h-px bg-blue-500"></span>
+    </div>
+    <h2 class="text-4xl sm:text-5xl font-bold text-white mb-4">Let's Connect</h2>
+    <p class="text-slate-400 text-lg mb-2">
+      Open to TPM roles in <span class="text-blue-400">AI/ML</span>, <span class="text-cyan-400">Enterprise SaaS</span>, and <span class="text-green-400">Healthcare IT</span>
+    </p>
+    <p class="text-slate-500 mb-12">Based in the US &mdash; Available for full-time, contract, and advisory roles</p>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6 mb-12">
+      <a href="https://github.com/YOUR_USERNAME" target="_blank" rel="noopener"
+         class="group block bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 hover:border-blue-500/60 hover:bg-slate-800 transition-all hover:-translate-y-1 transform">
+        <div class="w-12 h-12 rounded-xl bg-slate-700 flex items-center justify-center mx-auto mb-4 group-hover:bg-blue-900/50 transition-colors">
+          <svg class="w-6 h-6 text-slate-300 group-hover:text-blue-400 transition-colors" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+          </svg>
+        </div>
+        <div class="font-semibold text-white mb-1">GitHub</div>
+        <div class="text-sm text-slate-400 group-hover:text-blue-400 transition-colors">View Source Code</div>
+      </a>
+
+      <a href="https://linkedin.com/in/ashishkyadav07" target="_blank" rel="noopener"
+         class="group block bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 hover:border-cyan-500/60 hover:bg-slate-800 transition-all hover:-translate-y-1 transform">
+        <div class="w-12 h-12 rounded-xl bg-slate-700 flex items-center justify-center mx-auto mb-4 group-hover:bg-cyan-900/50 transition-colors">
+          <svg class="w-6 h-6 text-slate-300 group-hover:text-cyan-400 transition-colors" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+          </svg>
+        </div>
+        <div class="font-semibold text-white mb-1">LinkedIn</div>
+        <div class="text-sm text-slate-400 group-hover:text-cyan-400 transition-colors">ashishkyadav07</div>
+      </a>
+
+      <a href="mailto:ashishk.yadav@gmail.com"
+         class="group block bg-slate-800/60 border border-slate-700/60 rounded-2xl p-6 hover:border-green-500/60 hover:bg-slate-800 transition-all hover:-translate-y-1 transform">
+        <div class="w-12 h-12 rounded-xl bg-slate-700 flex items-center justify-center mx-auto mb-4 group-hover:bg-green-900/50 transition-colors">
+          <svg class="w-6 h-6 text-slate-300 group-hover:text-green-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div class="font-semibold text-white mb-1">Email</div>
+        <div class="text-sm text-slate-400 group-hover:text-green-400 transition-colors break-all">ashishk.yadav@gmail.com</div>
+      </a>
+    </div>
+  </div>
+  <div class="border-t border-slate-800 mt-8 pt-8">
+    <p class="text-center text-slate-500 text-sm">&copy; 2025 Ashish Yadav. Built with purpose.</p>
+  </div>
+</section>
+
+<!-- MODAL -->
+<div id="modal" class="fixed inset-0 z-[100] hidden items-center justify-center modal-overlay p-4" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <div id="modal-content" class="relative bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-8 shadow-2xl max-h-[90vh] overflow-y-auto">
+    <button id="modal-close" class="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors p-1" aria-label="Close modal">
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+      </svg>
+    </button>
+    <div id="modal-number" class="text-3xl font-mono font-bold text-blue-500 mb-2"></div>
+    <h3 id="modal-title" class="text-2xl font-bold text-white mb-2"></h3>
+    <div id="modal-domain" class="mb-4"></div>
+    <div class="mb-5">
+      <h4 class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-2">Business Problem</h4>
+      <p id="modal-problem" class="text-slate-300 leading-relaxed text-sm"></p>
+    </div>
+    <div class="mb-5">
+      <h4 class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-2">Key Technical Achievement</h4>
+      <p id="modal-achievement" class="text-slate-300 leading-relaxed text-sm"></p>
+    </div>
+    <div class="mb-6">
+      <h4 class="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-2">Tech Stack</h4>
+      <div id="modal-tech" class="flex flex-wrap gap-2"></div>
+    </div>
+    <div class="flex gap-3">
+      <a id="modal-github" href="https://github.com/YOUR_USERNAME" target="_blank" rel="noopener"
+         class="flex items-center gap-2 px-5 py-2 rounded-full bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium transition-colors">
+        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"/>
+        </svg>
+        View on GitHub
+      </a>
+      <button id="modal-close-btn" class="px-5 py-2 rounded-full border border-slate-600 text-slate-300 hover:border-slate-400 text-sm font-medium transition-colors">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- JAVASCRIPT -->
+<script>
+const projects = [
+  { id:"01", name:"Autogen Research Assistant", domain:"General AI", desc:"Multi-agent system that autonomously researches papers across ArXiv, Google Scholar, and Papers with Code.", tech:["AutoGen","Groq","Streamlit"], level:"Beginner", problem:"Researchers spend hours manually searching and synthesizing academic papers across fragmented databases. There is no unified way to auto-query multiple sources and collate findings in one place.", achievement:"Built a fully autonomous multi-agent research pipeline using AutoGen and Groq that queries ArXiv, Google Scholar, and Papers with Code simultaneously, then summarizes and ranks results by relevance." },
+  { id:"02", name:"Multi-Agent Doctor Booking", domain:"HealthTech", desc:"Autonomous appointment scheduling via delegated agents — patient intake, availability check, and confirmation.", tech:["LangChain","Groq","FastAPI","Streamlit"], level:"Intermediate", problem:"Healthcare scheduling is fragmented across phone, portal, and third-party systems, creating friction for patients and staff. Automating intake and booking reduces no-shows and administrative overhead.", achievement:"Designed a three-agent LangChain pipeline — intake agent, calendar availability agent, and confirmation agent — orchestrated via FastAPI with a Streamlit front end, demonstrating production-ready healthcare automation." },
+  { id:"03", name:"AI Coding Agent", domain:"Enterprise B2B", desc:"RAG-powered coding assistant that ingests a codebase into ChromaDB and answers queries, explains, and edits code.", tech:["LangChain","ChromaDB","OpenAI","Streamlit"], level:"Beginner", problem:"Developers waste significant time onboarding to large codebases or switching context between repos. An AI assistant that understands the full codebase accelerates development and reduces knowledge silos.", achievement:"Implemented a full RAG pipeline that chunks and indexes an entire codebase into ChromaDB, then uses LangChain retrieval to answer natural language queries about code structure, logic, and edits." },
+  { id:"04", name:"Customer Service Agent", domain:"Enterprise B2B", desc:"Context-aware support agent with embedded product docs — handles FAQs, returns, and escalation routing.", tech:["LangChain","OpenAI","Streamlit"], level:"Intermediate", problem:"Enterprise support teams are overwhelmed with repetitive queries that don't require human judgment. An AI agent trained on product documentation can deflect 40-60% of tier-1 tickets.", achievement:"Built a multi-turn conversational agent that retrieves answers from embedded product documentation and applies logic-based routing to escalate complex issues to human agents, with full conversation context maintained." },
+  { id:"05", name:"Product Sentiment Classifier", domain:"Enterprise B2B", desc:"Review ingestion pipeline with OpenAI embedding-based sentiment scoring and SQLite persistence.", tech:["OpenAI Embeddings","SQLite","Streamlit"], level:"Intermediate", problem:"Product teams lack a scalable way to monitor sentiment across thousands of customer reviews from multiple channels. Manual analysis is slow and inconsistent.", achievement:"Built an end-to-end pipeline that ingests reviews, generates OpenAI embeddings for semantic similarity-based sentiment scoring, stores results in SQLite, and surfaces trend dashboards via Streamlit." },
+  { id:"06", name:"Resume & Cover Letter Generator", domain:"General AI", desc:"Personalized generator with GPT-4o-mini fine-tuning on resume/JD pairs for style-matched output.", tech:["OpenAI","Fine-tuning","Streamlit"], level:"Intermediate", problem:"Job seekers spend hours tailoring resumes and cover letters for each application with inconsistent quality. A fine-tuned model trained on successful resume/JD pairs can produce targeted, high-quality outputs instantly.", achievement:"Fine-tuned GPT-4o-mini on curated resume/job-description pairs to generate personalized, style-matched outputs — demonstrating the full fine-tuning lifecycle from data preparation to deployment." },
+  { id:"07", name:"Marketing Copy Generator", domain:"Enterprise B2B", desc:"A/B copy variant generator with style selector and performance logging for iterative testing.", tech:["OpenAI","Streamlit","Pandas"], level:"Beginner", problem:"Marketing teams need high-volume copy variants for A/B testing but lack capacity to generate and log them systematically. A generative AI tool with built-in variant tracking accelerates campaign iteration.", achievement:"Developed a Streamlit app with tone and style controls that generates multiple copy variants per prompt, logs all outputs with metadata to Pandas for performance tracking and future fine-tuning data collection." },
+  { id:"08", name:"Fine-Tune TinyLlama (LoRA)", domain:"General AI", desc:"Domain adaptation of TinyLlama-1.1B via QLoRA on marketing and legal datasets using PEFT.", tech:["TinyLlama","LoRA","PEFT","transformers"], level:"Advanced", problem:"Deploying large LLMs for niche domain tasks is expensive and slow. QLoRA-based fine-tuning enables domain adaptation of smaller models at a fraction of the compute cost.", achievement:"Applied QLoRA fine-tuning via HuggingFace PEFT to TinyLlama-1.1B on marketing and legal corpora, achieving measurable domain-specific improvement while keeping the trainable parameter count under 1% of total weights." },
+  { id:"09", name:"Image Captioning CNN+LSTM", domain:"General AI", desc:"Caption generation pipeline combining CNN feature extraction with LSTM sequence decoding and attention.", tech:["PyTorch","CNN","LSTM","BLIP"], level:"Advanced", problem:"Generating natural language descriptions for images is foundational to accessibility tools, content management systems, and multimodal AI applications.", achievement:"Built a full encoder-decoder captioning pipeline: CNN feature extractor feeding into an LSTM with attention mechanism, benchmarked against BLIP baseline with BLEU score evaluation on a held-out test set." },
+  { id:"10", name:"Human Activity Recognition", domain:"HealthTech", desc:"Wearable sensor data classification using LSTM for real-time activity detection with Streamlit comparison dashboard.", tech:["PyTorch LSTM","scikit-learn","Streamlit"], level:"Advanced", problem:"Remote patient monitoring and fitness platforms need accurate activity classification from wearable sensors to trigger personalized health interventions and detect falls or anomalies.", achievement:"Trained a multi-layer PyTorch LSTM on UCI HAR sensor sequences achieving 95%+ classification accuracy, with a Streamlit dashboard comparing model predictions against ground truth in real time." },
+  { id:"11", name:"Chest X-Ray Disease Detection", domain:"HealthTech", desc:"Binary pneumonia classifier with Grad-CAM explainability heatmaps — clinical-grade transparency for AI-assisted diagnosis.", tech:["PyTorch","VGG-16","Grad-CAM","Streamlit"], level:"Advanced", problem:"AI diagnostic tools in healthcare require not just high accuracy but interpretable explanations that radiologists can trust and validate — a black-box model is insufficient for clinical use.", achievement:"Fine-tuned VGG-16 on the Kaggle chest X-ray dataset for binary pneumonia classification, integrated Grad-CAM to visualize attention regions on X-rays, and deployed an interactive diagnostic interface via Streamlit." },
+  { id:"12", name:"Neural Style Transfer", domain:"General AI", desc:"Artistic style transfer app applying VGG-19-based NST — separate content from style at the pixel level.", tech:["PyTorch","VGG-19","NST","Streamlit"], level:"Intermediate", problem:"Creative tools that apply artistic styles to photographs have wide commercial applications in media, gaming, and marketing — requiring deep understanding of convolutional feature space manipulation.", achievement:"Implemented the Gatys et al. neural style transfer algorithm using VGG-19 feature layers, with separately tunable content and style loss weights and an interactive Streamlit UI for real-time style blending." },
+  { id:"13", name:"Legal Document Summarizer", domain:"Enterprise B2B", desc:"Multi-strategy summarization (baseline, RAG, map-reduce, chain refine) with side-by-side evaluation panel.", tech:["OpenAI","LangChain","RAG","Streamlit"], level:"Intermediate", problem:"Legal professionals spend hours reading and distilling lengthy contracts and regulatory documents. A multi-strategy AI summarizer can reduce review time by 70% while preserving critical clauses.", achievement:"Built a LangChain-powered app with four summarization strategies — baseline stuffing, RAG retrieval, map-reduce chunking, and chain refinement — displayed side by side for quality comparison and strategy selection." },
+  { id:"14", name:"News Topic Classifier", domain:"General AI", desc:"Three-approach comparison: TF-IDF + LR, OpenAI Embeddings + LR, and GPT-4o-mini zero-shot prompting.", tech:["OpenAI","scikit-learn","sentence-transformers"], level:"Intermediate", problem:"Media and content platforms need accurate, scalable topic classification to power recommendation engines and content moderation without manual tagging.", achievement:"Systematically benchmarked three NLP classification approaches on a standard news dataset — classical TF-IDF+LR, embedding-based LR, and GPT-4o-mini zero-shot — with detailed accuracy/cost tradeoff analysis." },
+  { id:"15", name:"Multilingual Chatbot", domain:"Enterprise B2B", desc:"Real-time translation + GPT chat in 50+ languages — built for global enterprise communication use cases.", tech:["OpenAI","deep-translator","Streamlit"], level:"Beginner", problem:"Global enterprises struggle to deliver consistent AI-powered support across language barriers. A multilingual chatbot breaks down communication silos for international customers and employees.", achievement:"Integrated deep-translator for real-time input/output translation across 50+ languages with GPT-4 as the reasoning backbone, enabling fully coherent multilingual conversations with language auto-detection." },
+  { id:"16", name:"Document Q&A (RAG)", domain:"Enterprise B2B", desc:"End-to-end RAG system over PDFs and text — chunk, embed, retrieve, answer with source citations.", tech:["LangChain","ChromaDB","OpenAI","Streamlit"], level:"Intermediate", problem:"Knowledge workers waste hours searching through large document repositories for specific answers. A RAG system over unstructured documents surfaces precise answers with source attribution.", achievement:"Built a production-quality RAG pipeline: PDF/text ingestion, recursive chunking, OpenAI embeddings stored in ChromaDB, similarity retrieval, GPT-4 answer synthesis with inline source citations displayed in Streamlit." },
+  { id:"S1", name:"LLM Setup & API Integration", domain:"General AI", desc:"Comparative setup across OpenAI, Ollama (local), and HuggingFace — model API integration fundamentals.", tech:["OpenAI","Ollama","HuggingFace"], level:"Beginner", problem:"Understanding the landscape of LLM providers — cloud API vs. local vs. open-source — is essential for architecting AI solutions with the right cost, latency, and privacy tradeoffs.", achievement:"Completed side-by-side integration of OpenAI GPT-4, Ollama local inference, and HuggingFace Hub models, documenting API patterns, token limits, and latency benchmarks to guide future architecture decisions." },
+  { id:"S2", name:"Chain-of-Thought (10 Use Cases)", domain:"Enterprise B2B", desc:"CoT reasoning across 10 industry domains: finance, fraud, healthcare, legal, supply chain, edtech.", tech:["OpenAI","Ollama","Pandas"], level:"Intermediate", problem:"Enterprises need structured reasoning from LLMs — not just factual recall — to automate complex decision workflows in high-stakes domains like fraud detection and clinical triage.", achievement:"Designed and implemented Chain-of-Thought prompting frameworks across 10 industry verticals, measuring reasoning quality improvements and documenting prompt templates for production reuse." },
+  { id:"S3", name:"RAG Fundamentals", domain:"Enterprise B2B", desc:"Core RAG pipeline: document loading, chunking, embedding, vector retrieval, and generation.", tech:["LangChain","ChromaDB","OpenAI"], level:"Intermediate", problem:"LLMs hallucinate on domain-specific queries without grounding. RAG is the foundational architecture for building trustworthy enterprise AI systems that answer from authoritative sources.", achievement:"Implemented every stage of the RAG pipeline from scratch: document loading, semantic chunking strategies, embedding generation, ChromaDB vector indexing, similarity search, and grounded generation with citations." },
+  { id:"S4", name:"Text-to-SQL", domain:"Enterprise B2B", desc:"Natural language to SQL query converter over a SQLite database — no schema memorization required.", tech:["OpenAI","SQLite","LangChain"], level:"Intermediate", problem:"Business analysts without SQL skills are blocked from querying operational databases directly. A text-to-SQL system democratizes data access across the enterprise.", achievement:"Built a LangChain-powered natural language to SQL converter that dynamically introspects the database schema and generates accurate, executable SQL queries from plain English questions." },
+  { id:"S5", name:"Multi-Agent Orchestration", domain:"FinTech", desc:"Orchestrated multi-agent system: QnA chatbot, data analyst, hotel review analyzer, risk assessment.", tech:["LangChain","OpenAI","Streamlit"], level:"Advanced", problem:"Complex financial workflows require multiple specialized capabilities — data retrieval, analysis, sentiment assessment, and risk scoring — that no single agent can perform reliably alone.", achievement:"Designed and deployed a four-agent orchestration system for FinTech use cases, with an orchestrator agent routing tasks to specialized sub-agents and aggregating results into a unified Streamlit dashboard." },
+  { id:"S6", name:"Browser Automation & Scraping", domain:"General AI", desc:"Selenium-powered web automation with LangSmith observability — scraping, screenshots, and login flows.", tech:["Selenium","BeautifulSoup","LangSmith"], level:"Advanced", problem:"AI systems often need to gather real-world data from web sources and perform browser-based actions as part of agentic workflows. Reliable automation with observability is critical for production pipelines.", achievement:"Built a fully automated browser agent using Selenium for navigation, login, and scraping, integrated with LangSmith for end-to-end trace observability of agent decisions and tool invocations." },
+  { id:"S7", name:"CrewAI Multi-Agent Systems", domain:"Enterprise B2B", desc:"Role-based agent crews tackling research analysis, multi-perspective debate, and customer support.", tech:["CrewAI","OpenAI","LangChain"], level:"Advanced", problem:"Enterprise AI solutions require coordinated multi-agent systems where agents with distinct roles collaborate, debate, and check each other's outputs — mimicking how expert teams operate.", achievement:"Deployed three CrewAI crews with defined roles (Researcher, Analyst, Critic, Support Agent) and task delegation, demonstrating how role-based agent design improves output quality over single-agent approaches." },
+  { id:"S8", name:"AutoGen FinTech App", domain:"FinTech", desc:"Conversational financial analysis with AutoGen agents — live yfinance data, Streamlit dashboard.", tech:["AutoGen","OpenAI","yfinance","Streamlit"], level:"Advanced", problem:"Financial professionals need natural language interfaces for live market data analysis that go beyond static dashboards — enabling dynamic queries, comparisons, and scenario analysis.", achievement:"Built an AutoGen multi-agent app that fetches live market data via yfinance, performs conversational financial analysis across agent turns, and renders interactive charts and summaries in a Streamlit dashboard." }
+];
+
+function domainPill(domain) {
+  const map = {
+    "Enterprise B2B": "bg-blue-900 text-blue-300 border-blue-700",
+    "HealthTech":     "bg-green-900 text-green-300 border-green-700",
+    "FinTech":        "bg-orange-900 text-orange-300 border-orange-700",
+    "General AI":     "bg-purple-900 text-purple-300 border-purple-700"
+  };
+  return map[domain] || "bg-slate-800 text-slate-300 border-slate-700";
+}
+
+function levelBadge(level) {
+  const map = {
+    "Beginner":     "bg-slate-700 text-slate-300",
+    "Intermediate": "bg-yellow-900 text-yellow-300",
+    "Advanced":     "bg-red-900 text-red-300"
+  };
+  return map[level] || "bg-slate-700 text-slate-300";
+}
+
+function buildCards(filter) {
+  const grid = document.getElementById("project-grid");
+  const noResults = document.getElementById("no-results");
+  grid.innerHTML = "";
+  const filtered = filter === "ALL" ? projects : projects.filter(p => p.domain === filter);
+  if (filtered.length === 0) { noResults.classList.remove("hidden"); return; }
+  noResults.classList.add("hidden");
+  filtered.forEach(p => {
+    const card = document.createElement("div");
+    card.className = "project-card group bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col gap-4 hover:border-slate-700";
+    card.setAttribute("data-domain", p.domain);
+    card.setAttribute("role", "button");
+    card.setAttribute("tabindex", "0");
+    card.setAttribute("aria-label", "View details for " + p.name);
+    const techPills = p.tech.map(t => '<span class="px-2 py-0.5 rounded text-xs bg-slate-800 text-slate-400 border border-slate-700">' + t + '</span>').join("");
+    card.innerHTML = '<div class="flex items-start justify-between gap-2"><span class="font-mono text-2xl font-bold text-blue-500/60">' + p.id + '</span><span class="px-2.5 py-1 rounded-full text-xs font-medium border ' + levelBadge(p.level) + '">' + p.level + '</span></div><div><h3 class="font-bold text-white text-base leading-snug mb-1">' + p.name + '</h3><span class="inline-block px-2.5 py-0.5 rounded-full text-xs font-medium border ' + domainPill(p.domain) + ' mb-3">' + p.domain + '</span><p class="text-slate-400 text-sm leading-relaxed">' + p.desc + '</p></div><div class="flex flex-wrap gap-1.5 mt-auto">' + techPills + '</div><div class="text-blue-400 text-xs font-medium mt-1 opacity-0 group-hover:opacity-100 transition-opacity">Click to view details</div>';
+    card.addEventListener("click", () => openModal(p));
+    card.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openModal(p); } });
+    grid.appendChild(card);
+  });
+}
+
+document.getElementById("filter-tabs").addEventListener("click", e => {
+  const btn = e.target.closest(".filter-tab");
+  if (!btn) return;
+  document.querySelectorAll(".filter-tab").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  buildCards(btn.dataset.filter);
+});
+
+function openModal(p) {
+  document.getElementById("modal-number").textContent = p.id;
+  document.getElementById("modal-title").textContent = p.name;
+  document.getElementById("modal-domain").innerHTML = '<span class="px-3 py-1 rounded-full text-xs font-medium border ' + domainPill(p.domain) + '">' + p.domain + '</span>';
+  document.getElementById("modal-problem").textContent = p.problem;
+  document.getElementById("modal-achievement").textContent = p.achievement;
+  document.getElementById("modal-tech").innerHTML = p.tech.map(t => '<span class="px-3 py-1 rounded-full text-xs bg-slate-800 text-slate-300 border border-slate-700">' + t + '</span>').join("");
+  const modal = document.getElementById("modal");
+  modal.classList.remove("hidden");
+  modal.classList.add("flex");
+  document.body.style.overflow = "hidden";
+  document.getElementById("modal-close").focus();
+}
+
+function closeModal() {
+  const modal = document.getElementById("modal");
+  modal.classList.add("hidden");
+  modal.classList.remove("flex");
+  document.body.style.overflow = "";
+}
+
+document.getElementById("modal-close").addEventListener("click", closeModal);
+document.getElementById("modal-close-btn").addEventListener("click", closeModal);
+document.getElementById("modal").addEventListener("click", e => { if (e.target === document.getElementById("modal")) closeModal(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
+
+const navbar = document.getElementById("navbar");
+window.addEventListener("scroll", () => {
+  navbar.classList.toggle("nav-scrolled", window.scrollY > 50);
+}, { passive: true });
+
+const mobileMenuBtn = document.getElementById("mobile-menu-btn");
+const mobileMenu = document.getElementById("mobile-menu");
+const hamburgerIcon = document.getElementById("hamburger-icon");
+const closeMenuIcon = document.getElementById("close-icon");
+mobileMenuBtn.addEventListener("click", () => {
+  const isOpen = !mobileMenu.classList.contains("hidden");
+  mobileMenu.classList.toggle("hidden", isOpen);
+  hamburgerIcon.classList.toggle("hidden", !isOpen);
+  closeMenuIcon.classList.toggle("hidden", isOpen);
+});
+function closeMobileMenu() {
+  mobileMenu.classList.add("hidden");
+  hamburgerIcon.classList.remove("hidden");
+  closeMenuIcon.classList.add("hidden");
+}
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) { entry.target.classList.add("visible"); observer.unobserve(entry.target); }
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll(".fade-in-section").forEach(el => observer.observe(el));
+
+buildCards("ALL");
+</script>
+</body>
+</html>
