@@ -1,23 +1,36 @@
 import streamlit as st
 import os
 from dotenv import load_dotenv
-from agents import ResearchAgents
-from data_loader import DataLoader
 
 load_dotenv()
 
-print("ok")
+st.set_page_config(page_title="Autogen Research Assistant", page_icon="📚")
+
+def _require_keys(*pairs):
+    needed = [(k, lbl, ph) for k, lbl, ph in pairs if not os.getenv(k)]
+    if not needed:
+        return
+    with st.sidebar:
+        st.markdown("### 🔑 API Keys")
+        st.caption("Used for this session only — never stored.")
+        for k, lbl, ph in needed:
+            val = st.text_input(lbl, type="password", placeholder=ph, key=f"_k_{k}")
+            if val:
+                os.environ[k] = val
+    still = [lbl for k, lbl, _ in pairs if not os.getenv(k)]
+    if still:
+        st.info(f"👈 Enter your {' and '.join(still)} in the sidebar to run this demo.")
+        st.stop()
+
+_require_keys(("GROQ_API_KEY", "Groq API Key", "gsk_..."))
+
+from agents import ResearchAgents
+from data_loader import DataLoader
 
 # Streamlit UI Title
 st.title("📚 Virtual Research Assistant")
 
-# Retrieve the API key from environment variables
 groq_api_key = os.getenv("GROQ_API_KEY")
-
-# Check if API key is set, else stop execution
-if not groq_api_key:
-    st.error("GROQ_API_KEY is missing. Please set it in your environment variables.")
-    st.stop()
 
 # Initialize AI Agents for summarization and analysis
 agents = ResearchAgents(groq_api_key)

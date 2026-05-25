@@ -163,18 +163,32 @@ def make_qa_chain(vectordb: Chroma, llm_model: str, temperature: float, api_key:
 st.set_page_config(page_title="RAG Chat (TXT + PDF)", page_icon="📄", layout="wide")
 init_session_state()
 
+def _require_keys(*pairs):
+    needed = [(k, lbl, ph) for k, lbl, ph in pairs if not os.getenv(k)]
+    if not needed:
+        return
+    with st.sidebar:
+        st.markdown("---")
+        st.markdown("### 🔑 API Keys")
+        st.caption("Used for this session only — never stored.")
+        for k, lbl, ph in needed:
+            val = st.text_input(lbl, type="password", placeholder=ph, key=f"_k_{k}")
+            if val:
+                os.environ[k] = val
+    still = [lbl for k, lbl, _ in pairs if not os.getenv(k)]
+    if still:
+        st.info(f"👈 Enter your {' and '.join(still)} in the sidebar to run this demo.")
+        st.stop()
+
+_require_keys(("OPENAI_API_KEY", "OpenAI API Key", "sk-..."))
+
 st.title("📄💬 RAG Chat over TXT & PDF (OpenAI + Chroma)")
 st.caption("Upload .txt/.pdf or provide a file path. Build embeddings with OpenAI, chat, and view retrieved source chunks with filename and page numbers.")
 
+api_key = ensure_api_key()
+
 with st.sidebar:
     st.header("⚙️ Settings")
-    openai_key = st.text_input("OPENAI_API_KEY (optional if in .env)", type="password", value="")
-    if openai_key:
-        os.environ["OPENAI_API_KEY"] = openai_key
-    api_key = ensure_api_key()
-    if not api_key:
-        st.warning("Set OPENAI_API_KEY here or in your .env file.", icon="⚠️")
-
     llm_model = st.selectbox("LLM model", options=[DEFAULT_LLM, "gpt-4o", "gpt-4o-mini-2024-07-18"], index=0)
     temperature = st.slider("Temperature", 0.0, 1.0, 0.0, 0.1)
 

@@ -1,5 +1,30 @@
-
+import os
 import streamlit as st
+from dotenv import load_dotenv
+
+load_dotenv()
+
+st.set_page_config(page_title=" Summarizer Demo", page_icon="📑", layout="wide")
+
+def _require_keys(*pairs):
+    needed = [(k, lbl, ph) for k, lbl, ph in pairs if not os.getenv(k)]
+    if not needed:
+        return
+    with st.sidebar:
+        st.markdown("---")
+        st.markdown("### 🔑 API Keys")
+        st.caption("Used for this session only — never stored.")
+        for k, lbl, ph in needed:
+            val = st.text_input(lbl, type="password", placeholder=ph, key=f"_k_{k}")
+            if val:
+                os.environ[k] = val
+    still = [lbl for k, lbl, _ in pairs if not os.getenv(k)]
+    if still:
+        st.info(f"👈 Enter your {' and '.join(still)} in the sidebar to run this demo.")
+        st.stop()
+
+_require_keys(("OPENAI_API_KEY", "OpenAI API Key", "sk-..."))
+
 from utils.io import load_file, load_from_url
 from summarizers import baseline, rag, map_reduce, chaining, progressive
 from summarizers import extractive
@@ -10,7 +35,6 @@ from utils.chunking import token_chunks
 from utils.metrics import coverage, redundancy, sentence_citations
 from utils.quotes import quote_preserving
 
-st.set_page_config(page_title=" Summarizer Demo", page_icon="📑", layout="wide")
 st.title(" Modular Summarizer Demo")
 
 tab_upload, tab_url = st.tabs(["Upload TXT/PDF", "From URL (PDF or Web Page)"])

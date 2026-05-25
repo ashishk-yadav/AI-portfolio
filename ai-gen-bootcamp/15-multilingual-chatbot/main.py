@@ -1,10 +1,34 @@
+import os
 import streamlit as st
-from utils.tokenizer import simple_tokenize
-from utils.translator import google_translate, gpt_translate, gpt_stream_translate
+from dotenv import load_dotenv
 from langdetect import detect
 from fpdf import FPDF
 
+load_dotenv()
+
 st.set_page_config(page_title="🌍 Multi-Language Chat Bot", layout="wide")
+
+def _require_keys(*pairs):
+    needed = [(k, lbl, ph) for k, lbl, ph in pairs if not os.getenv(k)]
+    if not needed:
+        return
+    with st.sidebar:
+        st.markdown("---")
+        st.markdown("### 🔑 API Keys")
+        st.caption("Used for this session only — never stored.")
+        for k, lbl, ph in needed:
+            val = st.text_input(lbl, type="password", placeholder=ph, key=f"_k_{k}")
+            if val:
+                os.environ[k] = val
+    still = [lbl for k, lbl, _ in pairs if not os.getenv(k)]
+    if still:
+        st.info(f"👈 Enter your {' and '.join(still)} in the sidebar to run this demo.")
+        st.stop()
+
+_require_keys(("OPENAI_API_KEY", "OpenAI API Key", "sk-..."))
+
+from utils.tokenizer import simple_tokenize
+from utils.translator import google_translate, gpt_translate, gpt_stream_translate
 
 st.title("💬 Multi-Language Chat Translation Bot")
 st.write("Chat in different languages with real-time translation + smart features!")
@@ -91,7 +115,7 @@ def export_pdf():
     return pdf
 
 import io
-from PyPDF2 import PdfReader
+from pypdf import PdfReader
 from utils.translator import google_translate, gpt_translate
 
 # --- Document Translation Section ---

@@ -1,18 +1,39 @@
 
 import streamlit as st
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+st.set_page_config(page_title="Multi-Agent Orchestration", page_icon="🤝")
+
+def _require_keys(*pairs):
+    needed = [(k, lbl, ph) for k, lbl, ph in pairs if not os.getenv(k)]
+    if not needed:
+        return
+    with st.sidebar:
+        st.markdown("### 🔑 API Keys")
+        st.caption("Used for this session only — never stored.")
+        for k, lbl, ph in needed:
+            val = st.text_input(lbl, type="password", placeholder=ph, key=f"_k_{k}")
+            if val:
+                os.environ[k] = val
+    still = [lbl for k, lbl, _ in pairs if not os.getenv(k)]
+    if still:
+        st.info(f"👈 Enter your {' and '.join(still)} in the sidebar to run this demo.")
+        st.stop()
+
+_require_keys(("OPENAI_API_KEY", "OpenAI API Key", "sk-..."))
+
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_openai import ChatOpenAI
 from langchain.chains import RetrievalQA
 from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-import os
 
-from dotenv import load_dotenv
-load_dotenv()
-
-LLM_MODEL = "gpt-4o-mini"  # or "gpt-4"
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY") # Replace this with your open ai key "SK-"
+LLM_MODEL = "gpt-4o-mini"
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 # Constants

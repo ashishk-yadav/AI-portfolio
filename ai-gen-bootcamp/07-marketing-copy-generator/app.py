@@ -30,10 +30,26 @@ model = st.sidebar.text_input("OpenAI model", value="gpt-4o-mini")
 temperature = st.sidebar.slider("Temperature", 0.0, 1.0, 0.7, 0.05)
 max_tokens = st.sidebar.slider("Max tokens", 100, 800, 280, 20)
 log_path = st.sidebar.text_input("Log CSV path", value="runs_log.csv")
-st.sidebar.caption("Set OPENAI_API_KEY in your environment or a .env file.")
+def _require_keys(*pairs):
+    needed = [(k, lbl, ph) for k, lbl, ph in pairs if not os.getenv(k)]
+    if not needed:
+        return
+    with st.sidebar:
+        st.markdown("---")
+        st.markdown("### 🔑 API Keys")
+        st.caption("Used for this session only — never stored.")
+        for k, lbl, ph in needed:
+            val = st.text_input(lbl, type="password", placeholder=ph, key=f"_k_{k}")
+            if val:
+                os.environ[k] = val
+    still = [lbl for k, lbl, _ in pairs if not os.getenv(k)]
+    if still:
+        st.info(f"👈 Enter your {' and '.join(still)} in the sidebar to run this demo.")
+        st.stop()
 
-# Create the client (will raise if no key present)
-client = OpenAI()  # or OpenAI(api_key="sk-...")
+_require_keys(("OPENAI_API_KEY", "OpenAI API Key", "sk-..."))
+
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 st.title("📝 Marketing Copy Generator with Style Selector")
 st.caption("Generate ad copy, social captions, or product descriptions in a selected tone, then run a quick A/B test.")

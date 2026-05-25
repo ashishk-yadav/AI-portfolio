@@ -1,11 +1,32 @@
 import json
 import os, joblib, numpy as np, pandas as pd, streamlit as st
 from dotenv import load_dotenv
-from openai import OpenAI
-from utils import LABELS, json_safe_parse, backoff_retry
 
 load_dotenv()
+
 st.set_page_config(page_title="News Topic Classifier", page_icon="📰")
+
+def _require_keys(*pairs):
+    needed = [(k, lbl, ph) for k, lbl, ph in pairs if not os.getenv(k)]
+    if not needed:
+        return
+    with st.sidebar:
+        st.markdown("---")
+        st.markdown("### 🔑 API Keys")
+        st.caption("Used for this session only — never stored.")
+        for k, lbl, ph in needed:
+            val = st.text_input(lbl, type="password", placeholder=ph, key=f"_k_{k}")
+            if val:
+                os.environ[k] = val
+    still = [lbl for k, lbl, _ in pairs if not os.getenv(k)]
+    if still:
+        st.info(f"👈 Enter your {' and '.join(still)} in the sidebar to run this demo.")
+        st.stop()
+
+_require_keys(("OPENAI_API_KEY", "OpenAI API Key", "sk-..."))
+
+from openai import OpenAI
+from utils import LABELS, json_safe_parse, backoff_retry
 
 st.title("📰 News Topic Classifier — Evolution Demo")
 st.caption("TF‑IDF → Embeddings → LLM (gpt‑4o‑mini) ")
