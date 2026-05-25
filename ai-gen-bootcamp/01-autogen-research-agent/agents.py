@@ -1,47 +1,44 @@
 import os
-from autogen import AssistantAgent
+from groq import Groq
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
 
 class ResearchAgents:
     def __init__(self, api_key):
-        self.groq_api_key = api_key
-        self.llm_config = {'config_list': [{'model': 'llama-3.3-70b-versatile', 'api_key': self.groq_api_key, 'api_type': "groq"}]}
+        self.client = Groq(api_key=api_key)
+        self.model = "llama-3.3-70b-versatile"
 
-        # Summarizer Agent - Summarizes research papers
-        self.summarizer_agent = AssistantAgent(
-            name="summarizer_agent",
-            system_message="Summarize the retrieved research papers and present concise summaries to the user, JUST GIVE THE RELEVANT SUMMARIES OF THE RESEARCH PAPER AND NOT YOUR THOUGHT PROCESS.",
-            llm_config=self.llm_config,
-            human_input_mode="NEVER",
-            code_execution_config=False
+        self._summarizer_system = (
+            "Summarize the retrieved research papers and present concise summaries to the user. "
+            "JUST GIVE THE RELEVANT SUMMARIES OF THE RESEARCH PAPER AND NOT YOUR THOUGHT PROCESS."
+        )
+        self._analyzer_system = (
+            "Analyze the summaries of the research papers and provide a list of advantages and "
+            "disadvantages for each paper in a pointwise format. "
+            "JUST GIVE THE ADVANTAGES AND DISADVANTAGES, NOT YOUR THOUGHT PROCESS."
         )
 
-        # Advantages and Disadvantages Agent - Analyzes pros and cons
-        self.advantages_disadvantages_agent = AssistantAgent(
-            name="advantages_disadvantages_agent",
-            system_message="Analyze the summaries of the research papers and provide a list of advantages and disadvantages for each paper in a pointwise format. JUST GIVE THE ADVANTAGES AND DISADVANTAGES, NOT YOUR THOUGHT PROCESS",
-            llm_config=self.llm_config,
-            human_input_mode="NEVER",
-            code_execution_config=False
+    def _call(self, system_msg: str, user_msg: str) -> str:
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": system_msg},
+                {"role": "user", "content": user_msg},
+            ],
+        )
+        return response.choices[0].message.content or ""
+
+    def summarize_paper(self, paper_summary: str) -> str:
+        """Generates a concise summary of the research paper."""
+        return self._call(
+            self._summarizer_system,
+            f"Summarize this paper: {paper_summary}",
         )
 
-    def summarize_paper(self, paper_summary):
-        """Generates a summary of the research paper."""
-        summary_response = self.summarizer_agent.generate_reply(
-            messages=[{"role": "user", "content": f"Summarize this paper: {paper_summary}"}]
-        )
-        return summary_response.get("content", "Summarization failed!") if isinstance(summary_response, dict) else str(summary_response)
-
-    def analyze_advantages_disadvantages(self, summary):
+    def analyze_advantages_disadvantages(self, summary: str) -> str:
         """Generates advantages and disadvantages of the research paper."""
-        adv_dis_response = self.advantages_disadvantages_agent.generate_reply(
-            messages=[{"role": "user", "content": f"Provide advantages and disadvantages for this paper: {summary}"}]
+        return self._call(
+            self._analyzer_system,
+            f"Provide advantages and disadvantages for this paper: {summary}",
         )
-        return adv_dis_response.get("content", "Advantages and disadvantages analysis failed!")
-
-
-
-
