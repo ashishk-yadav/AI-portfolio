@@ -61,7 +61,7 @@ Every project here is production-influenced — grounded in enterprise use cases
 **Quick start:**
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ai-portfolio.git
+git clone https://github.com/ashishk-yadav/AI-portfolio.git
 cd ai-portfolio
 cp .env.example .env
 # Edit .env with your API keys
@@ -128,7 +128,7 @@ ai-portfolio-repo/
 
 ## Contact
 
-[GitHub](https://github.com/YOUR_USERNAME) | [LinkedIn](https://linkedin.com/in/ashishkyadav07) | ashishk.yadav@gmail.com
+[GitHub](https://github.com/ashishk-yadav) | [LinkedIn](https://linkedin.com/in/ashishkyadav07) | ashishk.yadav@gmail.com
 
 ---
 
