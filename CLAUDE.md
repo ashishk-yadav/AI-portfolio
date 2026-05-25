@@ -62,30 +62,213 @@ Each project folder has:
 
 ## Current Git Status
 
-- Repo has been initialized (`git init`) ← Ashish is working through this step
-- Not yet pushed to GitHub
-- GitHub Pages not yet enabled
+- Repo: `git@github.com:ashishk-yadav/AI-portfolio.git`
+- Branch: `main` — all changes pushed
+- GitHub Pages: enabled at `https://ashishk-yadav.github.io/AI-portfolio`
+- SSH key: `~/.ssh/github_mac` (use `GIT_SSH_COMMAND="ssh -i ~/.ssh/github_mac" git push`)
 
-## Remaining Steps (in order)
+## Remaining Steps
 
-1. `git init && git add . && git commit` — **in progress now**
-2. Create GitHub repo (github.com/new) — name it `ai-portfolio`
-3. `git remote add origin https://github.com/YOUR_USERNAME/ai-portfolio.git`
-4. `git push -u origin main`
-5. Enable GitHub Pages: repo Settings → Pages → Source: `docs/` → Save
-6. Replace `YOUR_USERNAME` placeholder in `README.md` and `docs/index.html`
-7. Test live URL: `https://YOUR_USERNAME.github.io/ai-portfolio`
+1. Deploy all 21 Streamlit Cloud apps — see deployment table below
+2. Deploy 3 HuggingFace Spaces apps (projects 10, 11, 12)
+3. Update `demo:` URLs in `docs/index.html` once live URLs are known
 
 ---
 
 ## Key Decisions Made (don't undo these)
 
 - **All deps pinned** — intentional for reproducibility; don't unpin
+- **`pyautogen` removed from project 01** — AG2 rebranding broke `from autogen import`; replaced with direct Groq SDK
 - **`pyautogen==0.10.0` only in session-08** — do NOT add `autogen` package; they conflict
 - **`pypdf` not `PyPDF2`** — PyPDF2 is deprecated; all projects use `pypdf`
 - **`fpdf2` not `fpdf`** — same reason
 - **`langchain-openai` added to session-05** — was missing, caused import error with `ChatOpenAI`
 - **session-06 scripts 8 and 12** — rewritten as clean stubs (originals had missing dependencies)
+- **`runtime.txt` at repo root** — pins Python 3.11 for all Streamlit Cloud deployments; never remove
+
+---
+
+## Pre-Deployment Checklist
+
+Run every check below before deploying any project to Streamlit Cloud or HuggingFace Spaces.
+Learned from live deployment failures — each item maps to a real bug.
+
+---
+
+### 1. Python Version
+
+- [ ] `runtime.txt` exists at **repo root** with content `python-3.11`
+- [ ] Never rely on the platform's default Python — Streamlit Cloud has used 3.14 which breaks most ML/AI packages
+
+---
+
+### 2. requirements.txt — Version Existence
+
+Every pinned version must actually exist on PyPI. Verify with:
+
+```bash
+curl -s "https://pypi.org/pypi/<package>/<version>/json" -o /dev/null -w "%{http_code}"
+# 200 = exists, 404 = does not exist → deployment will fail
+```
+
+**Lessons learned:**
+- `pyautogen==0.9.9` — never released (skipped; valid range was `0.2.x` and `0.10.0`)
+- Never guess or copy version numbers — look them up on pypi.org
+
+---
+
+### 3. requirements.txt — Python 3.11 Compatibility
+
+Check `requires_python` for each complex package:
+
+```bash
+curl -s "https://pypi.org/pypi/<package>/<version>/json" | python3 -c \
+  "import sys,json; d=json.load(sys.stdin); print(d['info'].get('requires_python','any'))"
+```
+
+**Known constraints to watch:**
+| Package | Constraint | Safe on 3.11? |
+|---------|-----------|---------------|
+| `crewai>=0.80` | `<=3.13,>=3.10` | ✓ |
+| `pyautogen==0.10.0` | `>=3.10` | ✓ |
+| `numpy>=2.3` | `>=3.11` | ✓ exactly |
+| `scikit-learn>=1.7` | `>=3.10` | ✓ |
+| `pyautogen 0.2.x` | `<3.13` | ✓ |
+
+---
+
+### 4. requirements.txt — Completeness
+
+**Every `import X` in every `.py` file the app touches must have a corresponding package in requirements.txt.**
+Do NOT rely on transitive dependencies — they are not guaranteed.
+
+Audit steps:
+1. Open the Streamlit entry point (e.g., `app.py`)
+2. List every `import` and `from X import` — both at top-level and inside functions
+3. Follow every `from local_module import` — open that module and repeat
+4. For each import, confirm the PyPI package name is in requirements.txt
+
+**Known tricky misses from this project:**
+
+| Import statement | PyPI package needed | Common mistake |
+|-----------------|--------------------|----|
+| `from docx import Document` | `python-docx` | confusing import name |
+| `from jinja2 import Template` | `Jinja2` | often arrives transitively via streamlit — fragile |
+| `import chromadb` | `chromadb` | easy to miss when using via LangChain wrapper |
+| `from scholarly import scholarly` | `scholarly` | was in code but never in requirements |
+| `import PyPDF2` | **use `pypdf` instead** | PyPDF2 is deprecated |
+| `from fpdf import FPDF` | `fpdf2` (not `fpdf`) | import name ≠ PyPI name |
+| `import PIL` | `Pillow` | import name ≠ PyPI name |
+
+**Remove unused packages** — they slow installs and can introduce conflicts:
+- Anything leftover after a rewrite (e.g., `fastapi`/`uvicorn` after switching from FastAPI to standalone Streamlit)
+- Packages used only in commented-out code paths
+
+---
+
+### 5. Package Naming Gotchas
+
+PyPI package name ≠ Python import name in several cases:
+
+| PyPI install name | Python import | Notes |
+|------------------|--------------|-------|
+| `python-docx` | `from docx import Document` | |
+| `Pillow` | `import PIL` | |
+| `fpdf2` | `from fpdf import FPDF` | do NOT use `fpdf` (unmaintained) |
+| `pypdf` | `from pypdf import PdfReader` | replaces deprecated `PyPDF2` |
+| `scikit-learn` | `import sklearn` | |
+| `beautifulsoup4` | `from bs4 import BeautifulSoup` | |
+| `opencv-python` | `import cv2` | |
+
+**Rebranded/broken packages:**
+- `pyautogen>=0.10.0` — AG2 rebranding; `from autogen import AssistantAgent` no longer works reliably → use the direct SDK (Groq, OpenAI) instead
+- `PyPDF2` — deprecated; use `pypdf`
+- `fpdf` — unmaintained; use `fpdf2`
+
+---
+
+### 6. Code Architecture — Import Safety
+
+**Rule: No LLM client must be created, and no key must be read, before `_require_keys()` runs.**
+
+Checklist:
+- [ ] `st.set_page_config()` is the **first** Streamlit call in the script (before any `st.*`)
+- [ ] `_require_keys()` is defined and called **before** any local module import that touches an LLM client
+- [ ] No `client = OpenAI()` / `client = Groq()` at module level — move into a function or class `__init__`
+- [ ] No `raise ValueError("KEY not set")` at module level — replace with `_require_keys()` pattern
+- [ ] No `crew.kickoff()`, `chain.run()`, or any LLM call at module level
+
+**`_require_keys` canonical pattern** (copy-paste for every new app):
+
+```python
+import os
+import streamlit as st
+from dotenv import load_dotenv
+
+load_dotenv()
+
+st.set_page_config(page_title="...", page_icon="...")
+
+def _require_keys(*pairs):
+    needed = [(k, lbl, ph) for k, lbl, ph in pairs if not os.getenv(k)]
+    if not needed:
+        return
+    with st.sidebar:
+        st.markdown("---")
+        st.markdown("### 🔑 API Keys")
+        st.caption("Used for this session only — never stored.")
+        for k, lbl, ph in needed:
+            val = st.text_input(lbl, type="password", placeholder=ph, key=f"_k_{k}")
+            if val:
+                os.environ[k] = val
+    still = [lbl for k, lbl, _ in pairs if not os.getenv(k)]
+    if still:
+        st.info(f"👈 Enter your {' and '.join(still)} in the sidebar to run this demo.")
+        st.stop()
+
+_require_keys(
+    ("OPENAI_API_KEY", "OpenAI API Key", "sk-..."),
+    # ("GROQ_API_KEY", "Groq API Key", "gsk_..."),   # add as needed
+)
+
+# ALL local module imports go AFTER this line
+from my_module import MyClass
+```
+
+---
+
+### 7. Code Architecture — Cloud Compatibility
+
+- [ ] No calls to `localhost` / `127.0.0.1` — the app must be fully self-contained (no local FastAPI backend, no local model server)
+- [ ] No `selenium` / browser automation — Streamlit Cloud has no display server
+- [ ] No training code in the Streamlit entry point — training must be offline; app only does inference
+- [ ] No hardcoded file paths — use relative paths or `os.path.join`
+- [ ] No `input()` calls — Streamlit is not a terminal
+
+---
+
+### 8. Instance-Level Bugs to Check
+
+- [ ] Every `self.X` referenced in a method is set in `__init__` — common miss when a feature is half-removed
+- [ ] No bare `except:` swallowing real errors silently — use `except Exception as e: st.error(str(e))`
+- [ ] All agent/chain objects that depend on an API key are created **lazily** (inside button handlers or `@st.cache_resource` functions), not at app startup
+
+---
+
+### 9. Pre-Deploy Smoke Test (local)
+
+```bash
+cd <project-dir>
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt          # must complete with 0 errors
+python -c "import <main_module>"         # catches import-time crashes
+streamlit run app.py                     # open in browser, verify sidebar key prompt appears before any crash
+```
+
+Verify:
+- [ ] App loads with NO env keys set — sidebar shows key prompt, does not crash
+- [ ] After entering a valid key, the main UI renders
+- [ ] At least one core action (button press) works end-to-end
 
 ---
 
@@ -100,6 +283,7 @@ Project `02-multi-agent-doctor-booking` source directory contained a real `.env`
 
 ## What Was Fixed (audit findings resolved)
 
+### Initial audit
 | Project | Fix Applied |
 |---------|------------|
 | 11-chest-xray-detection | `client = OpenAI(api_key="")` → proper env loading |
@@ -113,6 +297,29 @@ Project `02-multi-agent-doctor-booking` source directory contained a real `.env`
 | 03-ai-coding-agent | Duplicate `dotenv==0.9.9` removed |
 | 02-multi-agent-doctor-booking | `verify=False` SSL → `verify=True`; bloated pip-freeze requirements cleaned |
 | All projects | `os.environ[KEY] = os.getenv(KEY)` → validated with `raise ValueError` |
+
+### Runtime key collection (all 24 apps)
+| Scope | Fix Applied |
+|-------|------------|
+| All 16 existing Streamlit entry points | Added `_require_keys()` pattern — sidebar key prompt, lazy local imports |
+| 02-multi-agent-doctor-booking | Full rewrite: FastAPI backend → standalone LangChain/Groq app |
+| session-07-crewai-agents | Full rewrite: `crew.kickoff()` at module level → button handler |
+| session-08-autogen-fintech | Agents moved from module level into `run_analysis()` function |
+| 7 CLI-only projects (08, 09, S01–S06) | New `app.py` Streamlit wrapper files created |
+
+### Deployment bug fixes (found during live Streamlit Cloud deploy)
+| Project | Bug | Fix |
+|---------|-----|-----|
+| All projects | Streamlit Cloud defaulted to Python 3.14, breaking most packages | Added `runtime.txt` → `python-3.11` at repo root |
+| 01-autogen-research-agent | `pyautogen==0.9.9` doesn't exist on PyPI | Changed to `0.10.0` then removed entirely |
+| 01-autogen-research-agent | `pyautogen==0.10.0` AG2 rebranding — `from autogen import` broken | Rewrote `agents.py` using Groq SDK directly |
+| 01-autogen-research-agent | `from scholarly import scholarly` — package not in requirements | Removed (unused in main code path) |
+| 01-autogen-research-agent | `self.search_agent` used but never set in `DataLoader.__init__` | Removed broken expansion logic |
+| 06-resume-cover-letter-generator | `python-docx` missing (app uses `from docx import Document`) | Added `python-docx==1.1.2` |
+| 06-resume-cover-letter-generator | `Jinja2` missing (prompts.py uses jinja2.Template) | Added `Jinja2==3.1.4` |
+| 06-resume-cover-letter-generator | `PyPDF2` used in code, only `pypdf` in requirements | Changed to `from pypdf import PdfReader` |
+| session-05-multi-agent-orchestration | `chromadb` missing (LangChain Chroma needs it directly) | Added `chromadb==0.5.20` |
+| session-05-multi-agent-orchestration | `yfinance` in requirements, unused by the app | Removed |
 
 ---
 
