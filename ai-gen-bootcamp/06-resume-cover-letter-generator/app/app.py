@@ -27,7 +27,7 @@ _require_keys(("OPENAI_API_KEY", "OpenAI API Key", "sk-..."))
 from prompts import RESUME_BULLETS_TMPL, COVER_LETTER_TMPL
 from llm import generate_text
 from docx import Document
-import PyPDF2
+from pypdf import PdfReader
 
 def read_file_contents(uploaded_file):
     if uploaded_file is None:
@@ -36,7 +36,7 @@ def read_file_contents(uploaded_file):
     if file_type == "text/plain":
         return uploaded_file.read().decode("utf-8")
     elif file_type == "application/pdf":
-        reader = PyPDF2.PdfReader(uploaded_file)
+        reader = PdfReader(uploaded_file)
         return "\n".join(page.extract_text() for page in reader.pages if page.extract_text())
     elif file_type in ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"]:
         doc = Document(uploaded_file)
