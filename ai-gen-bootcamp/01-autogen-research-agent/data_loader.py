@@ -1,48 +1,65 @@
-import arxiv
+import requests
+
+# Semantic Scholar Graph API — generous rate limits, no key required for basic use.
+# Covers ArXiv, PubMed, ACL Anthology, IEEE and more in one endpoint.
+_BASE_URL = "https://api.semanticscholar.org/graph/v1/paper/search"
+_FIELDS = "title,abstract,url,year,authors,externalIds"
+_HEADERS = {
+    "User-Agent": "AI-Portfolio-Demo/1.0 (https://github.com/ashishk-yadav/AI-portfolio; educational use)"
+}
 
 
 class DataLoader:
     def __init__(self):
-        # num_retries=1: don't hammer the API repeatedly on rate-limit (429).
-        # delay_seconds=3: polite pause between multi-page fetches.
-        self._client = arxiv.Client(
-            page_size=10,
-            delay_seconds=3.0,
-            num_retries=1,
-        )
+        pass
 
     def fetch_arxiv_papers(self, query: str, max_results: int = 5) -> list:
         """
-        Fetches research papers from ArXiv using the official arxiv library.
+        Fetches academic papers via the Semantic Scholar API.
+        Returns ArXiv links when available; falls back to the Semantic Scholar URL.
+
         Returns list of dicts with keys — title, summary, link.
         Raises RuntimeError with a descriptive message on failure.
         """
         if not query or not query.strip():
             raise RuntimeError("Search query is empty. Enter a topic and try again.")
 
-        search = arxiv.Search(
-            query=query.strip(),
-            max_results=max_results,
-            sort_by=arxiv.SortCriterion.Relevance,
-        )
+        params = {
+            "query": query.strip(),
+            "limit": max_results,
+            "fields": _FIELDS,
+        }
 
         try:
-            results = list(self._client.results(search))
-        except arxiv.HTTPError as e:
-            if e.status == 429:
-                raise RuntimeError(
-                    "ArXiv is temporarily rate-limiting this IP (HTTP 429). "
-                    "Wait 1–2 minutes and try again — this clears on its own."
-                )
-            raise RuntimeError(f"ArXiv API error (HTTP {e.status}): {e}")
-        except Exception as e:
-            raise RuntimeError(f"ArXiv fetch failed: {e}")
+            resp = requests.get(_BASE_URL, params=params, headers=_HEADERS, timeout=15)
+        except requests.exceptions.Timeout:
+            raise RuntimeError("Semantic Scholar API timed out. Check your connection and try again.")
+        except requests.exceptions.ConnectionError as e:
+            raise RuntimeError(f"Could not reach Semantic Scholar API: {e}")
 
-        return [
-            {
-                "title": r.title,
-                "summary": r.summary,
-                "link": r.entry_id,
-            }
-            for r in results
-        ]
+        if resp.status_code == 429:
+            raise RuntimeError(
+                "Semantic Scholar is rate-limiting this IP (HTTP 429). "
+                "Wait a minute and try again."
+            )
+        if not resp.ok:
+            raise RuntimeError(
+                f"Semantic Scholar API returned HTTP {resp.status_code}."
+            )
+
+        papers = []
+        for p in resp.json().get("data", []):
+            # Prefer the ArXiv link when the paper is on ArXiv
+            arxiv_id = (p.get("externalIds") or {}).get("ArXiv")
+            link = (
+                f"https://arxiv.org/abs/{arxiv_id}"
+                if arxiv_id
+                else (p.get("url") or "")
+            )
+            papers.append({
+                "title": p.get("title") or "Untitled",
+                "summary": p.get("abstract") or "No abstract available.",
+                "link": link,
+            })
+
+        return papers
