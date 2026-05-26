@@ -1,3 +1,5 @@
+import json
+import unicodedata
 import requests
 
 # OpenAlex — NSF-funded open academic graph, no API key required.
@@ -7,6 +9,22 @@ _MAILTO = "ashishk.yadavai@gmail.com"
 _HEADERS = {
     "User-Agent": "AI-Portfolio-Demo/1.0 (mailto:ashishk.yadavai@gmail.com)"
 }
+
+
+def _safe_str(text) -> str:
+    """Normalize Unicode to clean UTF-8, dropping surrogates and invalid bytes.
+
+    OpenAlex papers often contain Greek letters (α, β), math symbols, and
+    accented characters that trigger 'ascii' codec errors in some LLM SDK
+    versions. NFC normalization + a UTF-8 round-trip cleanly handles all of
+    these without stripping meaningful content.
+    """
+    if not text:
+        return ""
+    if not isinstance(text, str):
+        text = str(text)
+    text = unicodedata.normalize("NFC", text)
+    return text.encode("utf-8", errors="replace").decode("utf-8")
 
 
 def _reconstruct_abstract(inverted_index: dict) -> str:
@@ -54,8 +72,15 @@ class DataLoader:
         if not resp.ok:
             raise RuntimeError(f"OpenAlex API returned HTTP {resp.status_code}.")
 
+        # Decode with explicit UTF-8 to handle non-ASCII chars before they hit
+        # any codec boundary in the LLM SDK (some versions use ASCII internally).
+        try:
+            data = json.loads(resp.content.decode("utf-8", errors="replace"))
+        except json.JSONDecodeError as e:
+            raise RuntimeError(f"OpenAlex returned invalid JSON: {e}")
+
         papers = []
-        for p in resp.json().get("results", []):
+        for p in data.get("results", []):
             # Prefer ArXiv link → open-access URL → landing page → DOI
             ids = p.get("ids") or {}
             arxiv_url = ids.get("arxiv", "")
@@ -65,9 +90,9 @@ class DataLoader:
             link = arxiv_url or oa_url or landing or doi
 
             papers.append({
-                "title": p.get("title") or "Untitled",
-                "summary": _reconstruct_abstract(p.get("abstract_inverted_index")),
-                "link": link,
+                "title": _safe_str(p.get("title") or "Untitled"),
+                "summary": _safe_str(_reconstruct_abstract(p.get("abstract_inverted_index"))),
+                "link": _safe_str(link),
             })
 
         return papers
