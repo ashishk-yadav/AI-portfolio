@@ -1,12 +1,23 @@
 import requests
 
-# Semantic Scholar Graph API — generous rate limits, no key required for basic use.
-# Covers ArXiv, PubMed, ACL Anthology, IEEE and more in one endpoint.
-_BASE_URL = "https://api.semanticscholar.org/graph/v1/paper/search"
-_FIELDS = "title,abstract,url,year,authors,externalIds"
+# OpenAlex — NSF-funded open academic graph, no API key required.
+# Adding `mailto` places us in the "polite pool" (higher rate limits, no IP blocks).
+_BASE_URL = "https://api.openalex.org/works"
+_MAILTO = "ashishk.yadavai@gmail.com"
 _HEADERS = {
-    "User-Agent": "AI-Portfolio-Demo/1.0 (https://github.com/ashishk-yadav/AI-portfolio; educational use)"
+    "User-Agent": "AI-Portfolio-Demo/1.0 (mailto:ashishk.yadavai@gmail.com)"
 }
+
+
+def _reconstruct_abstract(inverted_index: dict) -> str:
+    """OpenAlex stores abstracts as word→[positions] dicts. Reconstruct plain text."""
+    if not inverted_index:
+        return "No abstract available."
+    words = []
+    for word, positions in inverted_index.items():
+        for pos in positions:
+            words.append((pos, word))
+    return " ".join(w for _, w in sorted(words))
 
 
 class DataLoader:
@@ -15,8 +26,8 @@ class DataLoader:
 
     def fetch_arxiv_papers(self, query: str, max_results: int = 5) -> list:
         """
-        Fetches academic papers via the Semantic Scholar API.
-        Returns ArXiv links when available; falls back to the Semantic Scholar URL.
+        Fetches academic papers via the OpenAlex API.
+        Returns ArXiv links when the paper is indexed on ArXiv; falls back to DOI/URL.
 
         Returns list of dicts with keys — title, summary, link.
         Raises RuntimeError with a descriptive message on failure.
@@ -25,40 +36,37 @@ class DataLoader:
             raise RuntimeError("Search query is empty. Enter a topic and try again.")
 
         params = {
-            "query": query.strip(),
-            "limit": max_results,
-            "fields": _FIELDS,
+            "search": query.strip(),
+            "per-page": max_results,
+            "select": "title,abstract_inverted_index,ids,doi,primary_location,open_access",
+            "mailto": _MAILTO,
         }
 
         try:
             resp = requests.get(_BASE_URL, params=params, headers=_HEADERS, timeout=15)
         except requests.exceptions.Timeout:
-            raise RuntimeError("Semantic Scholar API timed out. Check your connection and try again.")
+            raise RuntimeError("OpenAlex API timed out. Check your connection and try again.")
         except requests.exceptions.ConnectionError as e:
-            raise RuntimeError(f"Could not reach Semantic Scholar API: {e}")
+            raise RuntimeError(f"Could not reach OpenAlex API: {e}")
 
         if resp.status_code == 429:
-            raise RuntimeError(
-                "Semantic Scholar is rate-limiting this IP (HTTP 429). "
-                "Wait a minute and try again."
-            )
+            raise RuntimeError("OpenAlex is rate-limiting this IP. Wait a moment and try again.")
         if not resp.ok:
-            raise RuntimeError(
-                f"Semantic Scholar API returned HTTP {resp.status_code}."
-            )
+            raise RuntimeError(f"OpenAlex API returned HTTP {resp.status_code}.")
 
         papers = []
-        for p in resp.json().get("data", []):
-            # Prefer the ArXiv link when the paper is on ArXiv
-            arxiv_id = (p.get("externalIds") or {}).get("ArXiv")
-            link = (
-                f"https://arxiv.org/abs/{arxiv_id}"
-                if arxiv_id
-                else (p.get("url") or "")
-            )
+        for p in resp.json().get("results", []):
+            # Prefer ArXiv link → open-access URL → landing page → DOI
+            ids = p.get("ids") or {}
+            arxiv_url = ids.get("arxiv", "")
+            oa_url = (p.get("open_access") or {}).get("oa_url", "")
+            landing = ((p.get("primary_location") or {}).get("landing_page_url") or "")
+            doi = p.get("doi") or ""
+            link = arxiv_url or oa_url or landing or doi
+
             papers.append({
                 "title": p.get("title") or "Untitled",
-                "summary": p.get("abstract") or "No abstract available.",
+                "summary": _reconstruct_abstract(p.get("abstract_inverted_index")),
                 "link": link,
             })
 
