@@ -1,25 +1,25 @@
-from dotenv import load_dotenv
 import os
-from openai import OpenAI
 from dataclasses import dataclass
 from typing import Optional
+from dotenv import load_dotenv
+from llm_provider import get_llm_response
 
-load_dotenv()  # load .env variables automatically
+load_dotenv()
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
 @dataclass
 class GenConfig:
-    model: str = os.getenv("GEN_MODEL", "gpt-4o-mini")
     max_tokens: int = 600
     temperature: float = 0.1
 
+
 def generate_text(prompt: str, cfg: Optional[GenConfig] = None) -> str:
+    """
+    Generates text using the currently selected LLM provider.
+    Provider / key / model are read from env vars set by provider_sidebar().
+    """
     cfg = cfg or GenConfig()
-    resp = client.responses.create(
-        model=cfg.model,
-        input=prompt,
-        max_output_tokens=cfg.max_tokens,
+    return get_llm_response(
+        messages=[{"role": "user", "content": prompt}],
         temperature=cfg.temperature,
     )
-    return resp.output_text

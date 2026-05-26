@@ -9,13 +9,10 @@ st.set_page_config(page_title="Multi-Agent Doctor Booking", page_icon="🩺", la
 
 # ── Key sidebar — must come before any LLM imports ──────────────────────────
 def _require_keys(*pairs):
-    needed = [(k, lbl, ph) for k, lbl, ph in pairs if not os.getenv(k)]
-    if not needed:
-        return
     with st.sidebar:
         st.markdown("### 🔑 API Keys")
         st.caption("Used for this session only — never stored.")
-        for k, lbl, ph in needed:
+        for k, lbl, ph in pairs:
             val = st.text_input(lbl, type="password", placeholder=ph, key=f"_k_{k}")
             if val:
                 os.environ[k] = val
@@ -26,7 +23,7 @@ def _require_keys(*pairs):
 
 
 _require_keys(
-    ("GROQ_API_KEY", "Groq API Key", "gsk_..."),
+    ("GROQ_API_KEY", "Groq API Key", "your-groq-api-key"),
 )
 
 # ── LLM imports (safe — key is set above) ───────────────────────────────────

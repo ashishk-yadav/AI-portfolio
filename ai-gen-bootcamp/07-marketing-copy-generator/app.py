@@ -5,7 +5,6 @@ import pandas as pd
 from dotenv import load_dotenv
 load_dotenv()
 
-from openai import OpenAI
 from prompts import (
     SYSTEM_BASE,
     build_draft_prompt,
@@ -26,30 +25,13 @@ st.set_page_config(page_title="Marketing Copy Generator", page_icon="📝", layo
 
 # --- Sidebar: Config ---
 st.sidebar.header("Configuration")
-model = st.sidebar.text_input("OpenAI model", value="gpt-4o-mini")
 temperature = st.sidebar.slider("Temperature", 0.0, 1.0, 0.7, 0.05)
 max_tokens = st.sidebar.slider("Max tokens", 100, 800, 280, 20)
 log_path = st.sidebar.text_input("Log CSV path", value="runs_log.csv")
-def _require_keys(*pairs):
-    needed = [(k, lbl, ph) for k, lbl, ph in pairs if not os.getenv(k)]
-    if not needed:
-        return
-    with st.sidebar:
-        st.markdown("---")
-        st.markdown("### 🔑 API Keys")
-        st.caption("Used for this session only — never stored.")
-        for k, lbl, ph in needed:
-            val = st.text_input(lbl, type="password", placeholder=ph, key=f"_k_{k}")
-            if val:
-                os.environ[k] = val
-    still = [lbl for k, lbl, _ in pairs if not os.getenv(k)]
-    if still:
-        st.info(f"👈 Enter your {' and '.join(still)} in the sidebar to run this demo.")
-        st.stop()
 
-_require_keys(("OPENAI_API_KEY", "OpenAI API Key", "sk-..."))
+from llm_provider import provider_sidebar, get_llm_response, active_model
 
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+llm_cfg = provider_sidebar(key_prefix="marketing")
 
 st.title("📝 Marketing Copy Generator with Style Selector")
 st.caption("Generate ad copy, social captions, or product descriptions in a selected tone, then run a quick A/B test.")
@@ -107,15 +89,21 @@ benefits = st.text_area(
 )
 keywords = st.text_input("Keywords (comma-separated)", key="keywords", placeholder="eco, hydration, bottle")
 
-# --- OpenAI helper ---
-def call_openai(messages):
-    resp = client.chat.completions.create(
-        model=model,
-        messages=messages,
-        temperature=temperature,
-        max_tokens=max_tokens,
-    )
-    return resp.choices[0].message.content.strip()
+# --- LLM helper (provider-agnostic) ---
+def call_llm(messages):
+    from llm_provider import get_openai_compatible_client, active_provider
+    provider = active_provider()
+    if provider in ("OpenAI", "Groq"):
+        client = get_openai_compatible_client()
+        resp = client.chat.completions.create(
+            model=active_model(),
+            messages=messages,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        return resp.choices[0].message.content.strip()
+    else:  # Anthropic — max_tokens not passed as kwarg; use get_llm_response
+        return get_llm_response(messages, temperature=temperature).strip()
 
 def make_variants(n=3):
     _features = str(features or "")
@@ -135,19 +123,19 @@ def make_variants(n=3):
         },
         {"role": "user", "content": build_draft_prompt(kind, product, audience, feats, bens, keys)},
     ]
-    draft = call_openai(base_messages)
+    draft = call_llm(base_messages)
 
     style_messages = base_messages + [
         {"role": "assistant", "content": draft},
         {"role": "user", "content": build_style_polish_prompt(style)},
     ]
-    styled = call_openai(style_messages)
+    styled = call_llm(style_messages)
 
     length_messages = style_messages + [
         {"role": "assistant", "content": styled},
         {"role": "user", "content": build_length_prompt(length)},
     ]
-    final = call_openai(length_messages)
+    final = call_llm(length_messages)
 
     # Ask for two alternates to reach 3 total variants
     alt_messages = length_messages + [
@@ -158,33 +146,29 @@ def make_variants(n=3):
             "Return each variant separated by a line with three dashes (---). No explanations.",
         },
     ]
-    alts = call_openai(alt_messages)
+    alts = call_llm(alt_messages)
     variants = [v.strip() for v in (final + "\n---\n" + alts).split("---") if v.strip()]
     return variants[:3]
 
 # --- Generate ---
 if st.button("Generate Copy"):
-    if not os.getenv("OPENAI_API_KEY"):
-        st.error("OPENAI_API_KEY not set. Add it to your environment or a .env file.")
-    else:
-        variants = make_variants(n=3)
-        st.session_state["variants"] = variants
-
-        # Log
-        inputs = {
-            "kind": kind,
-            "style": style,
-            "length": length,
-            "product_name": product_name,
-            "brand": brand,
-            "price": price,
-            "audience": audience,
-            "features": features,
-            "benefits": benefits,
-            "keywords": keywords,
-            "guidelines": guidelines,
-        }
-        save_run_to_csv(inputs, variants, log_path)
+    variants = make_variants(n=3)
+    st.session_state["variants"] = variants
+    # Log
+    inputs = {
+        "kind": kind,
+        "style": style,
+        "length": length,
+        "product_name": product_name,
+        "brand": brand,
+        "price": price,
+        "audience": audience,
+        "features": features,
+        "benefits": benefits,
+        "keywords": keywords,
+        "guidelines": guidelines,
+    }
+    save_run_to_csv(inputs, variants, log_path)
 
 # --- Output + A/B ---
 variants = st.session_state.get("variants", [])

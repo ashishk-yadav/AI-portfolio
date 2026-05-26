@@ -12,19 +12,16 @@ from dotenv import load_dotenv
 
 from langchain.schema import Document
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings, ChatOpenAI
 from langchain_chroma import Chroma
 from langchain.chains import RetrievalQA
 
-from pypdf import PdfReader  # <-- NEW
+from pypdf import PdfReader
 
 # -------------------- Config & Helpers --------------------
 load_dotenv()
 
-DEFAULT_TEXT_FILE_PATH = "onboarding.txt"  # can also be a .pdf now
+DEFAULT_TEXT_FILE_PATH = "onboarding.txt"
 DEFAULT_CHROMA_DIR = "chroma_store_openai"
-DEFAULT_LLM = "gpt-4o-mini"
-DEFAULT_EMBED = "text-embedding-3-small"
 
 SESSION_KEYS = ["vectordb", "qa_chain", "docs_ready", "messages", "last_build_info"]
 
@@ -34,10 +31,6 @@ def init_session_state():
             st.session_state[k] = None
     if "messages" not in st.session_state or st.session_state["messages"] is None:
         st.session_state["messages"] = []
-
-def ensure_api_key():
-    api_key = os.getenv("OPENAI_API_KEY") or ""
-    return api_key
 
 def read_text_from_upload(uploaded_file) -> Tuple[str, str]:
     """
@@ -149,13 +142,13 @@ def build_or_load_chroma(docs: List[Document], persist_dir: str, embedding_model
     vectordb = Chroma.from_documents(docs, embedding_model, persist_directory=persist_dir)
     return vectordb, True
 
-def make_qa_chain(vectordb: Chroma, llm_model: str, temperature: float, api_key: str):
-    llm = ChatOpenAI(model_name=llm_model, temperature=temperature, openai_api_key=api_key)
+def make_qa_chain(vectordb: Chroma, temperature: float):
+    llm = get_langchain_llm(temperature=temperature)
     qa_chain = RetrievalQA.from_chain_type(
         llm=llm,
         chain_type="stuff",
         retriever=vectordb.as_retriever(),
-        return_source_documents=True
+        return_source_documents=True,
     )
     return qa_chain
 
@@ -163,36 +156,16 @@ def make_qa_chain(vectordb: Chroma, llm_model: str, temperature: float, api_key:
 st.set_page_config(page_title="RAG Chat (TXT + PDF)", page_icon="📄", layout="wide")
 init_session_state()
 
-def _require_keys(*pairs):
-    needed = [(k, lbl, ph) for k, lbl, ph in pairs if not os.getenv(k)]
-    if not needed:
-        return
-    with st.sidebar:
-        st.markdown("---")
-        st.markdown("### 🔑 API Keys")
-        st.caption("Used for this session only — never stored.")
-        for k, lbl, ph in needed:
-            val = st.text_input(lbl, type="password", placeholder=ph, key=f"_k_{k}")
-            if val:
-                os.environ[k] = val
-    still = [lbl for k, lbl, _ in pairs if not os.getenv(k)]
-    if still:
-        st.info(f"👈 Enter your {' and '.join(still)} in the sidebar to run this demo.")
-        st.stop()
+from llm_provider import provider_sidebar, get_langchain_llm, get_langchain_embeddings
 
-_require_keys(("OPENAI_API_KEY", "OpenAI API Key", "sk-..."))
+llm_cfg = provider_sidebar(key_prefix="rag", show_model=True, needs_embeddings=True)
 
 st.title("📄💬 RAG Chat over TXT & PDF (OpenAI + Chroma)")
-st.caption("Upload .txt/.pdf or provide a file path. Build embeddings with OpenAI, chat, and view retrieved source chunks with filename and page numbers.")
-
-api_key = ensure_api_key()
+st.caption("Upload .txt/.pdf or provide a file path. Build embeddings, chat, and view retrieved source chunks.")
 
 with st.sidebar:
     st.header("⚙️ Settings")
-    llm_model = st.selectbox("LLM model", options=[DEFAULT_LLM, "gpt-4o", "gpt-4o-mini-2024-07-18"], index=0)
     temperature = st.slider("Temperature", 0.0, 1.0, 0.0, 0.1)
-
-    embed_model_name = st.selectbox("Embedding model", options=[DEFAULT_EMBED, "text-embedding-3-large"], index=0)
 
     st.divider()
     st.subheader("📄 Corpus")
@@ -229,110 +202,106 @@ with st.sidebar:
 
 # -------------------- Build / Load Vector Store --------------------
 if build_btn:
-    if not api_key:
-        st.error("OPENAI_API_KEY is required to build embeddings.")
-    else:
-        docs: List[Document] = []
-        sources_desc = []
-        total_chunks = 0
+    docs: List[Document] = []
+    sources_desc = []
+    total_chunks = 0
 
-        try:
-            if mode == "Upload files":
-                if not uploaded_files:
-                    st.error("No files uploaded.")
-                else:
-                    for uf in uploaded_files:
-                        name = uf.name
-                        ext = os.path.splitext(name.lower())[1]
-                        if ext == ".pdf":
-                            if per_page_pdf:
-                                page_docs = split_pdf_into_docs_per_page(
-                                    uploaded_file=uf, path="", chunk_size=chunk_size, chunk_overlap=chunk_overlap
-                                )
-                                docs.extend(page_docs)
-                            else:
-                                # Single stream from PDF
-                                text = extract_text_from_pdf_bytes(uf.getvalue() if hasattr(uf, "getvalue") else uf.read())
-                                docs.extend(split_into_docs_with_meta(text, f"Uploaded: {name}", per_page_chunks=False,
-                                                                      chunk_size=chunk_size, chunk_overlap=chunk_overlap))
-                        else:
-                            # .txt
-                            uf.seek(0)
-                            content = uf.read()
-                            try:
-                                text = content.decode("utf-8")
-                            except UnicodeDecodeError:
-                                text = content.decode("latin-1", errors="ignore")
-                            docs.extend(split_into_docs_with_meta(text, f"Uploaded: {name}", per_page_chunks=False,
-                                                                  chunk_size=chunk_size, chunk_overlap=chunk_overlap))
-                        sources_desc.append(name)
-
-            elif mode == "Use a single file path":
-                if not path_input or not os.path.exists(path_input):
-                    st.error("Invalid file path.")
-                else:
-                    name = os.path.basename(path_input)
+    try:
+        if mode == "Upload files":
+            if not uploaded_files:
+                st.error("No files uploaded.")
+            else:
+                for uf in uploaded_files:
+                    name = uf.name
                     ext = os.path.splitext(name.lower())[1]
                     if ext == ".pdf":
                         if per_page_pdf:
                             page_docs = split_pdf_into_docs_per_page(
-                                uploaded_file=None, path=path_input, chunk_size=chunk_size, chunk_overlap=chunk_overlap
+                                uploaded_file=uf, path="", chunk_size=chunk_size, chunk_overlap=chunk_overlap
                             )
                             docs.extend(page_docs)
                         else:
-                            text = extract_text_from_pdf_path(path_input)
-                            docs.extend(split_into_docs_with_meta(text, f"Path: {name}", per_page_chunks=False,
+                            text = extract_text_from_pdf_bytes(uf.getvalue() if hasattr(uf, "getvalue") else uf.read())
+                            docs.extend(split_into_docs_with_meta(text, f"Uploaded: {name}", per_page_chunks=False,
                                                                   chunk_size=chunk_size, chunk_overlap=chunk_overlap))
                     else:
-                        with open(path_input, "r", encoding="utf-8") as f:
-                            text = f.read()
-                        docs.extend(split_into_docs_with_meta(text, f"Path: {name}", per_page_chunks=False,
+                        uf.seek(0)
+                        content = uf.read()
+                        try:
+                            text = content.decode("utf-8")
+                        except UnicodeDecodeError:
+                            text = content.decode("latin-1", errors="ignore")
+                        docs.extend(split_into_docs_with_meta(text, f"Uploaded: {name}", per_page_chunks=False,
                                                               chunk_size=chunk_size, chunk_overlap=chunk_overlap))
                     sources_desc.append(name)
 
-            else:  # Manual text
-                if not manual_text.strip():
-                    st.error("No text provided.")
-                else:
-                    docs.extend(split_into_docs_with_meta(manual_text, "Manual text", per_page_chunks=False,
-                                                          chunk_size=chunk_size, chunk_overlap=chunk_overlap))
-                    sources_desc.append("Manual text")
-
-            if docs:
-                total_chunks = len(docs)
-                with st.spinner("Initializing embeddings and (re)building/loading Chroma…"):
-                    embedding_model = OpenAIEmbeddings(model=embed_model_name, openai_api_key=api_key)
-                    vectordb, rebuilt = build_or_load_chroma(docs, persist_dir, embedding_model, force_rebuild=force_rebuild)
-
-                if vectordb is None:
-                    st.error("Failed to initialize Chroma.")
-                else:
-                    st.session_state["vectordb"] = vectordb
-                    st.session_state["qa_chain"] = make_qa_chain(vectordb, llm_model, temperature, api_key)
-                    st.session_state["docs_ready"] = True
-                    st.session_state["last_build_info"] = {
-                        "rebuilt": rebuilt,
-                        "chunks": total_chunks,
-                        "persist_dir": persist_dir,
-                        "sources": sources_desc,
-                        "embed_model": embed_model_name,
-                        "pdf_per_page": per_page_pdf
-                    }
-                    msg = "Vector store rebuilt." if rebuilt else "Loaded existing vector store."
-                    st.success(f"✅ {msg}")
-                    with st.expander("Build details"):
-                        st.json(st.session_state["last_build_info"])
-                    st.toast("Vector store ready!", icon="✅")
+        elif mode == "Use a single file path":
+            if not path_input or not os.path.exists(path_input):
+                st.error("Invalid file path.")
             else:
-                st.error("No chunks were created. Check your inputs or adjust chunk size/overlap.")
-        except Exception as e:
-            st.error(f"Build failed: {e}")
+                name = os.path.basename(path_input)
+                ext = os.path.splitext(name.lower())[1]
+                if ext == ".pdf":
+                    if per_page_pdf:
+                        page_docs = split_pdf_into_docs_per_page(
+                            uploaded_file=None, path=path_input, chunk_size=chunk_size, chunk_overlap=chunk_overlap
+                        )
+                        docs.extend(page_docs)
+                    else:
+                        text = extract_text_from_pdf_path(path_input)
+                        docs.extend(split_into_docs_with_meta(text, f"Path: {name}", per_page_chunks=False,
+                                                              chunk_size=chunk_size, chunk_overlap=chunk_overlap))
+                else:
+                    with open(path_input, "r", encoding="utf-8") as f:
+                        text = f.read()
+                    docs.extend(split_into_docs_with_meta(text, f"Path: {name}", per_page_chunks=False,
+                                                          chunk_size=chunk_size, chunk_overlap=chunk_overlap))
+                sources_desc.append(name)
 
-# If vectordb exists, allow rewire
-if st.session_state.get("vectordb") and ensure_api_key():
+        else:  # Manual text
+            if not manual_text.strip():
+                st.error("No text provided.")
+            else:
+                docs.extend(split_into_docs_with_meta(manual_text, "Manual text", per_page_chunks=False,
+                                                      chunk_size=chunk_size, chunk_overlap=chunk_overlap))
+                sources_desc.append("Manual text")
+
+        if docs:
+            total_chunks = len(docs)
+            with st.spinner("Initializing embeddings and (re)building/loading Chroma…"):
+                embedding_model = get_langchain_embeddings()
+                vectordb, rebuilt = build_or_load_chroma(docs, persist_dir, embedding_model, force_rebuild=force_rebuild)
+
+            if vectordb is None:
+                st.error("Failed to initialize Chroma.")
+            else:
+                st.session_state["vectordb"] = vectordb
+                st.session_state["qa_chain"] = make_qa_chain(vectordb, temperature)
+                st.session_state["docs_ready"] = True
+                st.session_state["last_build_info"] = {
+                    "rebuilt": rebuilt,
+                    "chunks": total_chunks,
+                    "persist_dir": persist_dir,
+                    "sources": sources_desc,
+                    "embed_model": llm_cfg.get("embed_model", "text-embedding-3-small"),
+                    "pdf_per_page": per_page_pdf,
+                    "llm_provider": llm_cfg.get("provider", "OpenAI"),
+                }
+                msg = "Vector store rebuilt." if rebuilt else "Loaded existing vector store."
+                st.success(f"✅ {msg}")
+                with st.expander("Build details"):
+                    st.json(st.session_state["last_build_info"])
+                st.toast("Vector store ready!", icon="✅")
+        else:
+            st.error("No chunks were created. Check your inputs or adjust chunk size/overlap.")
+    except Exception as e:
+        st.error(f"Build failed: {e}")
+
+# If vectordb exists, allow rewire without rebuilding the vector store
+if st.session_state.get("vectordb"):
     with st.sidebar:
-        if st.button("==== Apply LLM settings (no rebuild)"):
-            st.session_state["qa_chain"] = make_qa_chain(st.session_state["vectordb"], llm_model, temperature, ensure_api_key())
+        if st.button("🔁 Apply LLM settings (no rebuild)"):
+            st.session_state["qa_chain"] = make_qa_chain(st.session_state["vectordb"], temperature)
             st.toast("LLM settings applied.", icon="🔁")
 
 # -------------------- Chat Area --------------------
@@ -386,10 +355,11 @@ with col_left:
                     st.error(f"Error during retrieval/QA: {e}")
 
 with col_right:
-    st.subheader("==== Status ===")
+    st.subheader("📊 Status")
     if st.session_state.get("last_build_info"):
         info = st.session_state["last_build_info"]
         st.markdown(
+            f"- **Provider:** `{info.get('llm_provider', '—')}`\n"
             f"- **Chroma dir:** `{info['persist_dir']}`\n"
             f"- **Chunks:** {info['chunks']}\n"
             f"- **Embedding:** `{info['embed_model']}`\n"
@@ -400,7 +370,7 @@ with col_right:
         st.markdown("- Vector store not built/loaded yet.")
 
     st.divider()
-    st.subheader(" Recommendations/Tips")
+    st.subheader("💡 Recommendations/Tips")
     st.markdown(
         "- If a PDF returns little/no text, it might be a scanned PDF (images). Add OCR (e.g., `pytesseract`) for those.\n"
         "- Use **Per-page PDF** to preserve page numbers in citations.\n"

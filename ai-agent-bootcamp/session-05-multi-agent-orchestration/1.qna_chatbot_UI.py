@@ -8,13 +8,10 @@ load_dotenv()
 st.set_page_config(page_title="Multi-Agent Orchestration", page_icon="🤝")
 
 def _require_keys(*pairs):
-    needed = [(k, lbl, ph) for k, lbl, ph in pairs if not os.getenv(k)]
-    if not needed:
-        return
     with st.sidebar:
         st.markdown("### 🔑 API Keys")
         st.caption("Used for this session only — never stored.")
-        for k, lbl, ph in needed:
+        for k, lbl, ph in pairs:
             val = st.text_input(lbl, type="password", placeholder=ph, key=f"_k_{k}")
             if val:
                 os.environ[k] = val

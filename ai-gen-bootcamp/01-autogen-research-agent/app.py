@@ -6,23 +6,9 @@ load_dotenv()
 
 st.set_page_config(page_title="Autogen Research Assistant", page_icon="📚")
 
-def _require_keys(*pairs):
-    needed = [(k, lbl, ph) for k, lbl, ph in pairs if not os.getenv(k)]
-    if not needed:
-        return
-    with st.sidebar:
-        st.markdown("### 🔑 API Keys")
-        st.caption("Used for this session only — never stored.")
-        for k, lbl, ph in needed:
-            val = st.text_input(lbl, type="password", placeholder=ph, key=f"_k_{k}")
-            if val:
-                os.environ[k] = val
-    still = [lbl for k, lbl, _ in pairs if not os.getenv(k)]
-    if still:
-        st.info(f"👈 Enter your {' and '.join(still)} in the sidebar to run this demo.")
-        st.stop()
+from llm_provider import provider_sidebar
 
-_require_keys(("GROQ_API_KEY", "Groq API Key", "gsk_..."))
+llm_cfg = provider_sidebar(key_prefix="research")
 
 from agents import ResearchAgents
 from data_loader import DataLoader
@@ -30,10 +16,8 @@ from data_loader import DataLoader
 # Streamlit UI Title
 st.title("📚 Virtual Research Assistant")
 
-groq_api_key = os.getenv("GROQ_API_KEY")
-
-# Initialize AI Agents for summarization and analysis
-agents = ResearchAgents(groq_api_key)
+# Initialize AI Agents — provider is resolved from env vars set by provider_sidebar()
+agents = ResearchAgents()
 
 # Initialize DataLoader for fetching research papers
 data_loader = DataLoader()
