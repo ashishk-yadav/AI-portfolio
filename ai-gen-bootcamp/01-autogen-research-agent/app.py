@@ -22,11 +22,12 @@ agents = ResearchAgents()
 # Initialize DataLoader for fetching research papers
 data_loader = DataLoader()
 
-# Input field for the user to enter a research topic
-query = st.text_input("Enter a research topic:")
+# Input field — wrapped in a form so pressing Enter submits it
+with st.form("search_form"):
+    query = st.text_input("Enter a research topic:")
+    submitted = st.form_submit_button("Search")
 
-# When the user clicks "Search"
-if st.button("Search"):
+if submitted:
     try:
         with st.spinner("Fetching papers from ArXiv…"):
             all_papers = data_loader.fetch_arxiv_papers(query)
