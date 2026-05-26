@@ -27,42 +27,37 @@ query = st.text_input("Enter a research topic:")
 
 # When the user clicks "Search"
 if st.button("Search"):
-    with st.spinner("Fetching research papers..."):  # Show a loading spinner
-        
-        # Fetch research papers from ArXiv and Google Scholar
-        arxiv_papers = data_loader.fetch_arxiv_papers(query)
-        # arxiv_papers = data_loader.fetch_google_scholar_papers(query)
+    try:
+        with st.spinner("Fetching papers from ArXiv…"):
+            all_papers = data_loader.fetch_arxiv_papers(query)
 
-        #google_scholar_papers = data_loader.fetch_google_scholar_papers(query)
-        #all_papers = arxiv_papers + google_scholar_papers  # Combine results from both sources
-        all_papers = arxiv_papers
-
-        # If no papers are found, display an error message
         if not all_papers:
-            st.error("Failed to fetch papers. Try again!")
+            st.warning("No papers found for that query. Try a different search term.")
         else:
             processed_papers = []
+            with st.spinner(f"Summarising {len(all_papers)} paper(s) with {llm_cfg['provider']}…"):
+                for paper in all_papers:
+                    summary = agents.summarize_paper(paper["summary"])
+                    adv_dis = agents.analyze_advantages_disadvantages(summary)
+                    processed_papers.append({
+                        "title": paper["title"],
+                        "link": paper["link"],
+                        "summary": summary,
+                        "advantages_disadvantages": adv_dis,
+                    })
 
-            # Process each paper: generate summary and analyze advantages/disadvantages
-            for paper in all_papers:
-                summary = agents.summarize_paper(paper['summary'])  # Generate summary
-                adv_dis = agents.analyze_advantages_disadvantages(summary)  # Analyze pros/cons
-
-                processed_papers.append({
-                    "title": paper["title"],
-                    "link": paper["link"],
-                    "summary": summary,
-                    "advantages_disadvantages": adv_dis,
-                })
-
-            # Display the processed research papers
             st.subheader("Top Research Papers:")
             for i, paper in enumerate(processed_papers, 1):
-                st.markdown(f"### {i}. {paper['title']}")  # Paper title
-                st.markdown(f"🔗 [Read Paper]({paper['link']})")  # Paper link
-                st.write(f"**Summary:** {paper['summary']}")  # Paper summary
-                st.write(f"{paper['advantages_disadvantages']}")  # Pros/cons analysis
-                st.markdown("---")  # Separator between papers
+                st.markdown(f"### {i}. {paper['title']}")
+                st.markdown(f"🔗 [Read Paper]({paper['link']})")
+                st.write(f"**Summary:** {paper['summary']}")
+                st.write(paper["advantages_disadvantages"])
+                st.markdown("---")
+
+    except RuntimeError as e:
+        st.error(f"⚠️ {e}")
+    except Exception as e:
+        st.error(f"Unexpected error: {e}")
 
 
 
