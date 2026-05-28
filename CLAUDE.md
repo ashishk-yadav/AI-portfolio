@@ -355,3 +355,134 @@ cp ../../.env.example .env   # then edit .env with real keys
 streamlit run app.py          # or whichever entry point the README specifies
 pytest tests/                 # run test suite
 ```
+
+---
+
+## Docker / OrbStack Deployment (Next Phase)
+
+**Decision made in Cowork session (2026-05-28). Build this next.**
+
+### Architecture
+
+All 24 projects run as Docker containers on the Mac Mini — no Streamlit Cloud, no HuggingFace Spaces. Zero cold starts. Remote access via Tailscale.
+
+**Hardware:** Mac Mini 2023, M2 (Apple Silicon), 16 GB unified RAM, 1 TB storage  
+**Docker runtime:** OrbStack (not Docker Desktop) — native ARM64, near-zero overhead  
+**Remote access:** Tailscale already installed and configured  
+
+### Two-Tier Compose Profiles
+
+| Profile | Projects | RAM est. | When |
+|---------|----------|----------|------|
+| `core` | 20 light/medium apps (all except 09, 10, 11, 12) | ~5.5 GB | Always running (`restart: unless-stopped`) |
+| `ml` | 09-image-captioning, 10-human-activity-recognition, 11-chest-xray-detection, 12-neural-style-transfer | ~3–4 GB | Start before ML demos, stop after |
+
+Start commands:
+```bash
+docker compose --profile core up -d       # boot the always-on 20
+docker compose --profile ml up -d         # boot heavy ML apps before demo
+docker compose --profile ml stop          # stop after demo
+```
+
+### Critical: Bake Model Weights into Docker Images
+
+For projects 09, 10, 11, 12 — download model weights at `docker build` time, not at runtime.
+This eliminates the cold start for model loading. Example pattern:
+
+```dockerfile
+# In Dockerfile for project 11
+RUN python -c "
+import torchvision.models as models
+models.vgg16(weights='IMAGENET1K_V1')
+"
+```
+
+Each project's weights download once on first build, live in the image layer forever.
+
+### ARM64 / Apple Silicon Notes
+
+- OrbStack runs containers as native `linux/arm64` — no QEMU emulation, near-native performance
+- PyTorch in containers does NOT get Apple MPS (Metal GPU) — CPU inference only
+- For demo purposes this is fine: project 11 ~3–5 sec/inference, project 12 ~30–60 sec/image (frame as "watch the model work")
+- Use `--platform linux/arm64` in all Dockerfiles
+
+### Port Mapping Convention
+
+Assign ports sequentially so they're predictable:
+
+| Port | Project |
+|------|---------|
+| 8501 | 01-autogen-research-agent |
+| 8502 | 02-multi-agent-doctor-booking |
+| 8503 | 03-ai-coding-agent |
+| 8504 | 04-customer-service-agent |
+| 8505 | 05-product-sentiment-classifier |
+| 8506 | 06-resume-cover-letter-generator |
+| 8507 | 07-marketing-copy-generator |
+| 8508 | 08-finetune-tinyllama |
+| 8509 | 09-image-captioning-cnn-lstm |
+| 8510 | 10-human-activity-recognition |
+| 8511 | 11-chest-xray-detection |
+| 8512 | 12-neural-style-transfer |
+| 8513 | 13-legal-doc-summarizer |
+| 8514 | 14-news-topic-classifier |
+| 8515 | 15-multilingual-chatbot |
+| 8516 | 16-document-qna-rag |
+| 8601 | session-01-llm-setup |
+| 8602 | session-02-chain-of-thought |
+| 8603 | session-03-rag-fundamentals |
+| 8604 | session-04-text-to-sql |
+| 8605 | session-05-multi-agent-orchestration |
+| 8606 | session-06-browser-automation |
+| 8607 | session-07-crewai-agents |
+| 8608 | session-08-autogen-fintech |
+
+### Files to Create
+
+1. **`Dockerfile`** (shared base template — copy/adapt per project):
+```dockerfile
+FROM python:3.11-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+EXPOSE 8501
+CMD ["streamlit", "run", "app.py", \
+     "--server.port=8501", \
+     "--server.address=0.0.0.0", \
+     "--server.headless=true"]
+```
+
+2. **`docker-compose.yml`** at repo root — all 24 services, profiles, port mapping, shared `.env`
+
+3. **`.env`** at repo root (gitignored) — single source of truth for all API keys across all containers
+
+4. **`build_all.sh`** — builds all 24 images (run once, or after deps change)
+
+5. **`README-docker.md`** — quick-start for Docker workflow
+
+### API Keys — Shared .env Pattern
+
+Mount the root `.env` into every container so keys are managed in one place:
+
+```yaml
+# In docker-compose.yml, per service:
+env_file:
+  - .env
+```
+
+### Tailscale Access
+
+Once containers are running, access from any Tailscale device:
+- `http://<mac-mini-tailscale-ip>:8501` — project 01
+- `http://<mac-mini-tailscale-ip>:8608` — session 08
+- No extra config needed — OrbStack exposes ports on all interfaces by default
+
+### What to Build (Claude Code task)
+
+1. Write a `Dockerfile` for each of the 24 projects (adapt entry point per project — see CLAUDE.md Repo Structure for which file is the Streamlit entry point per project)
+2. Write `docker-compose.yml` with all 24 services, correct profiles, port mapping above
+3. Write `build_all.sh` — iterates all projects and runs `docker build`
+4. Test: `docker compose --profile core up -d` — verify all 20 core containers start and are reachable
+5. Test: `docker compose --profile ml up -d` — verify 4 ML containers start and models load
+6. Update `docs/index.html` demo links to point to `http://localhost:<port>` for local use
