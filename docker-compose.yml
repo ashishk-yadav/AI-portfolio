@@ -3,6 +3,7 @@ services:
   # ─── AI Gen Bootcamp: Core (01-08) ───────────────────────────────────────────
 
   app-01:
+    container_name: research-assistant
     build:
       context: ai-gen-bootcamp/01-autogen-research-agent
       dockerfile: Dockerfile
@@ -14,6 +15,7 @@ services:
     profiles: [core]
 
   app-02:
+    container_name: doctor-booking
     build:
       context: ai-gen-bootcamp/02-multi-agent-doctor-booking
       dockerfile: Dockerfile
@@ -25,6 +27,7 @@ services:
     profiles: [core]
 
   app-03:
+    container_name: ai-coding-agent
     build:
       context: ai-gen-bootcamp/03-ai-coding-agent
       dockerfile: Dockerfile
@@ -36,6 +39,7 @@ services:
     profiles: [core]
 
   app-04:
+    container_name: customer-service-agent
     build:
       context: ai-gen-bootcamp/04-customer-service-agent
       dockerfile: Dockerfile
@@ -47,6 +51,7 @@ services:
     profiles: [core]
 
   app-05:
+    container_name: sentiment-classifier
     build:
       context: ai-gen-bootcamp/05-product-sentiment-classifier
       dockerfile: Dockerfile
@@ -58,6 +63,7 @@ services:
     profiles: [core]
 
   app-06:
+    container_name: resume-generator
     build:
       context: ai-gen-bootcamp/06-resume-cover-letter-generator
       dockerfile: Dockerfile
@@ -69,6 +75,7 @@ services:
     profiles: [core]
 
   app-07:
+    container_name: marketing-copy
     build:
       context: ai-gen-bootcamp/07-marketing-copy-generator
       dockerfile: Dockerfile
@@ -80,6 +87,7 @@ services:
     profiles: [core]
 
   app-08:
+    container_name: finetune-tinyllama
     build:
       context: ai-gen-bootcamp/08-finetune-tinyllama
       dockerfile: Dockerfile
@@ -93,6 +101,7 @@ services:
   # ─── AI Gen Bootcamp: ML (09-12) ─────────────────────────────────────────────
 
   app-09:
+    container_name: image-captioning
     build:
       context: ai-gen-bootcamp/09-image-captioning-cnn-lstm
       dockerfile: Dockerfile
@@ -104,6 +113,7 @@ services:
     profiles: [ml]
 
   app-10:
+    container_name: activity-recognition
     build:
       context: ai-gen-bootcamp/10-human-activity-recognition
       dockerfile: Dockerfile
@@ -115,6 +125,7 @@ services:
     profiles: [ml]
 
   app-11:
+    container_name: xray-detection
     build:
       context: ai-gen-bootcamp/11-chest-xray-detection
       dockerfile: Dockerfile
@@ -126,6 +137,7 @@ services:
     profiles: [ml]
 
   app-12:
+    container_name: neural-style-transfer
     build:
       context: ai-gen-bootcamp/12-neural-style-transfer
       dockerfile: Dockerfile
@@ -139,6 +151,7 @@ services:
   # ─── AI Gen Bootcamp: Core (13-16) ───────────────────────────────────────────
 
   app-13:
+    container_name: legal-summarizer
     build:
       context: ai-gen-bootcamp/13-legal-doc-summarizer
       dockerfile: Dockerfile
@@ -150,6 +163,7 @@ services:
     profiles: [core]
 
   app-14:
+    container_name: news-classifier
     build:
       context: ai-gen-bootcamp/14-news-topic-classifier
       dockerfile: Dockerfile
@@ -161,6 +175,7 @@ services:
     profiles: [core]
 
   app-15:
+    container_name: multilingual-chatbot
     build:
       context: ai-gen-bootcamp/15-multilingual-chatbot
       dockerfile: Dockerfile
@@ -172,6 +187,7 @@ services:
     profiles: [core]
 
   app-16:
+    container_name: document-qna-rag
     build:
       context: ai-gen-bootcamp/16-document-qna-rag
       dockerfile: Dockerfile
@@ -185,6 +201,7 @@ services:
   # ─── AI Agent Bootcamp: Sessions (S1-S8) ─────────────────────────────────────
 
   app-s1:
+    container_name: llm-setup
     build:
       context: ai-agent-bootcamp/session-01-llm-setup
       dockerfile: Dockerfile
@@ -196,6 +213,7 @@ services:
     profiles: [core]
 
   app-s2:
+    container_name: chain-of-thought
     build:
       context: ai-agent-bootcamp/session-02-chain-of-thought
       dockerfile: Dockerfile
@@ -207,6 +225,7 @@ services:
     profiles: [core]
 
   app-s3:
+    container_name: rag-fundamentals
     build:
       context: ai-agent-bootcamp/session-03-rag-fundamentals
       dockerfile: Dockerfile
@@ -218,6 +237,7 @@ services:
     profiles: [core]
 
   app-s4:
+    container_name: text-to-sql
     build:
       context: ai-agent-bootcamp/session-04-text-to-sql
       dockerfile: Dockerfile
@@ -229,6 +249,7 @@ services:
     profiles: [core]
 
   app-s5:
+    container_name: multi-agent-orchestration
     build:
       context: ai-agent-bootcamp/session-05-multi-agent-orchestration
       dockerfile: Dockerfile
@@ -240,6 +261,7 @@ services:
     profiles: [core]
 
   app-s6:
+    container_name: browser-automation
     build:
       context: ai-agent-bootcamp/session-06-browser-automation
       dockerfile: Dockerfile
@@ -251,6 +273,7 @@ services:
     profiles: [core]
 
   app-s7:
+    container_name: crewai-agents
     build:
       context: ai-agent-bootcamp/session-07-crewai-agents
       dockerfile: Dockerfile
@@ -262,6 +285,7 @@ services:
     profiles: [core]
 
   app-s8:
+    container_name: autogen-fintech
     build:
       context: ai-agent-bootcamp/session-08-autogen-fintech
       dockerfile: Dockerfile
