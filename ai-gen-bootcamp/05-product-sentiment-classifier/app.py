@@ -16,6 +16,36 @@ from sentiment import analyze_sentiment, analyze_sentiments_per_review
 from wordcloud_gen import plot_wordcloud
 from utils import load_reviews_from_csv
 from utils import load_reviews_from_db, get_unique_products
+import sqlite3, os, pandas as pd
+
+# ── Auto-initialise the sample SQLite database on first run ──────────────────
+def _init_demo_db(db_path="reviews.db"):
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+    c.execute("""CREATE TABLE IF NOT EXISTS product_reviews
+                 (id INTEGER PRIMARY KEY AUTOINCREMENT, product_name TEXT, review TEXT)""")
+    c.execute("SELECT COUNT(*) FROM product_reviews")
+    if c.fetchone()[0] == 0:
+        sample = [
+            ("iPhone 15 Pro", "Absolutely love this phone. The camera system is unreal!"),
+            ("iPhone 15 Pro", "Battery life is disappointing for the price."),
+            ("iPhone 15 Pro", "The titanium build feels premium. Best phone I've owned."),
+            ("iPhone 15 Pro", "Gets warm during gaming sessions. Not ideal."),
+            ("Samsung Galaxy S24", "Snapdragon chip makes this blazing fast. No lag."),
+            ("Samsung Galaxy S24", "Display is gorgeous. Colours are vibrant and blacks are deep."),
+            ("Samsung Galaxy S24", "Great value vs iPhone. Switching was the right call."),
+            ("Google Pixel 8 Pro", "The AI features are genuinely useful, not gimmicks."),
+            ("Google Pixel 8 Pro", "Night Sight is still the best low-light camera on any phone."),
+            ("Google Pixel 8 Pro", "Pure Android experience — no bloatware at all."),
+            ("OnePlus 12", "Fastest charging I have ever seen. 0-100 in under 30 minutes."),
+            ("OnePlus 12", "Hasselblad camera tuning is noticeably better than last year."),
+            ("OnePlus 12", "Speaker quality is surprisingly good for the price."),
+        ]
+        c.executemany("INSERT INTO product_reviews (product_name, review) VALUES (?,?)", sample)
+        conn.commit()
+    conn.close()
+
+_init_demo_db()
 
 # ----- Step 1: Review Source -----
 # ----- Step 1: Source Selection -----
@@ -30,6 +60,10 @@ source = st.radio(
 reviews = []
 
 if source == "Paste / Upload CSV":
+    # Download sample CSV
+    with open("sample_reviews.csv", "rb") as f:
+        st.download_button("⬇️ Download sample_reviews.csv", f, "sample_reviews.csv", "text/csv",
+                           help="Upload this CSV back to try the CSV input mode")
     upload = st.file_uploader("Upload CSV file of reviews", type=["csv"], key="csv_uploader")
     if upload:
         loaded = load_reviews_from_csv(upload)
@@ -69,8 +103,15 @@ elif source == "Database Table":
     reviews = st.session_state.get('db_reviews', [])
 
 elif source == "Amazon Product URL":
-    amazon_url = st.text_input("Paste Amazon product URL:", key="amazon_url")
-    serpapi_key = st.text_input("Enter Search Api Key:", type="password", key="serpapi_key")
+    st.info(
+        "**API key required:** This uses [SerpAPI](https://serpapi.com) to scrape Amazon reviews. "
+        "Sign up at serpapi.com for a free key (100 searches/month). "
+        "Enter your `SERPAPI_KEY` below.", icon="🔑"
+    )
+    amazon_url = st.text_input("Paste Amazon product URL:", key="amazon_url",
+                               placeholder="https://www.amazon.com/dp/B0CHX3QBCH")
+    serpapi_key = st.text_input("SerpAPI Key:", type="password", key="serpapi_key",
+                                placeholder="Get free key at serpapi.com")
     if st.button("Fetch Amazon Reviews", key="amazon_fetch"):
         with st.spinner("Fetching reviews from Amazon..."):
             loaded, err = fetch_amazon_reviews(amazon_url, serpapi_key)
