@@ -1,21 +1,26 @@
-#pip install streamlit
-import streamlit as st
-from crewai import Agent, Task, Crew
-from langchain_community.chat_models import ChatOpenAI
 import os
+import streamlit as st
 from dotenv import load_dotenv
 
-# Load environment variables
 load_dotenv()
-api_key = os.getenv('OPENAI_API_KEY')
-if not api_key:
-    raise ValueError("OPENAI_API_KEY not set. Copy .env.example to .env and add your key.")
-os.environ['OPENAI_API_KEY'] = api_key
+st.set_page_config(page_title="AI Debate: Remote Work", layout="wide")
 
+# Key guard — must run before any LLM import
+if not os.getenv("OPENAI_API_KEY"):
+    with st.sidebar:
+        st.markdown("### 🔑 API Key")
+        val = st.text_input("OpenAI API Key", type="password", placeholder="sk-...")
+        if val:
+            os.environ["OPENAI_API_KEY"] = val
+    if not os.getenv("OPENAI_API_KEY"):
+        st.info("👈 Enter your OpenAI API Key in the sidebar to run the debate.")
+        st.stop()
+
+from crewai import Agent, Task, Crew
+from langchain_openai import ChatOpenAI  # moved out of langchain_community in LangChain 0.2+
 
 gpt4o_mini = ChatOpenAI(model="gpt-4o-mini", temperature=0.1)
 
-st.set_page_config(page_title="AI Debate: Remote Work", layout="wide")
 st.title("🤖 AI Debate: Should Remote Work Be the Default in Tech?")
 
 topic = st.text_input("Debate Topic", "Should remote work be the default in tech companies?")
