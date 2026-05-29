@@ -23,9 +23,10 @@ def get_openai_key():
 
 
 def build_rag(text: str, api_key: str):
+    import chromadb
     from langchain_openai import OpenAIEmbeddings, ChatOpenAI
     from langchain.text_splitter import RecursiveCharacterTextSplitter
-    from langchain_community.vectorstores import Chroma
+    from langchain_chroma import Chroma
     from langchain.schema import Document
 
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
@@ -33,7 +34,10 @@ def build_rag(text: str, api_key: str):
     docs = [Document(page_content=c) for c in chunks]
 
     embeddings = OpenAIEmbeddings(openai_api_key=api_key)
-    vectorstore = Chroma.from_documents(docs, embeddings, collection_name="rag_demo")
+    # EphemeralClient = in-memory, no SQLite tenant setup needed (fixes chromadb 0.5.x error)
+    client = chromadb.EphemeralClient()
+    vectorstore = Chroma.from_documents(docs, embeddings,
+        collection_name="rag_demo", client=client)
 
     return vectorstore, chunks, ChatOpenAI(model="gpt-4o-mini", openai_api_key=api_key, temperature=0)
 
