@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Portfolio — Local Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    html { scroll-behavior: smooth; }
+
+    @keyframes gradientShift {
+      0%   { background-position: 0% 50%; }
+      50%  { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .hero-bg {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a5f 30%, #0c2340 55%, #0f172a 80%, #0a1628 100%);
+      background-size: 300% 300%;
+      animation: gradientShift 12s ease infinite;
+    }
+
+    @keyframes float1 {
+      0%, 100% { transform: translate(0,0) scale(1); }
+      33%       { transform: translate(30px,-40px) scale(1.05); }
+      66%       { transform: translate(-20px,20px) scale(0.95); }
+    }
+    @keyframes float2 {
+      0%, 100% { transform: translate(0,0) scale(1); }
+      33%       { transform: translate(-40px,30px) scale(1.08); }
+      66%       { transform: translate(25px,-20px) scale(0.92); }
+    }
+    @keyframes float3 {
+      0%, 100% { transform: translate(0,0) scale(1); }
+      50%       { transform: translate(20px,40px) scale(1.1); }
+    }
+    .orb-1 { animation: float1 14s ease-in-out infinite; }
+    .orb-2 { animation: float2 18s ease-in-out infinite; }
+    .orb-3 { animation: float3 10s ease-in-out infinite; }
+
+    .nav-scrolled {
+      background: rgba(15,23,42,0.95) !important;
+      box-shadow: 0 1px 20px rgba(0,0,0,0.4);
+      backdrop-filter: blur(12px);
+    }
+
+    .app-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+    }
+    .app-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 12px 40px rgba(59,130,246,0.2);
+      border-color: rgba(59,130,246,0.4);
+    }
+
+    .filter-tab { transition: all 0.15s ease; }
+    .filter-tab.active {
+      background: #3b82f6;
+      color: #fff;
+      border-color: #3b82f6;
+    }
+
+    @keyframes statusPulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+      50%       { opacity: 0.85; box-shadow: 0 0 0 4px rgba(34,197,94,0); }
+    }
+    .status-online { animation: statusPulse 2s ease infinite; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 0.8s linear infinite; }
+
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: #0f172a; }
+    ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 3px; }
+
+    .port-badge {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      letter-spacing: 0.05em;
+    }
+
+    .launch-btn {
+      transition: all 0.15s ease;
+    }
+    .launch-btn:hover {
+      background: #2563eb;
+      box-shadow: 0 0 20px rgba(59,130,246,0.4);
+    }
+    .launch-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .stat-card {
+      background: rgba(30,58,95,0.3);
+      border: 1px solid rgba(59,130,246,0.15);
+      backdrop-filter: blur(8px);
+    }
+
+    .host-input {
+      background: rgba(15,23,42,0.8);
+      border: 1px solid rgba(59,130,246,0.3);
+      transition: border-color 0.2s;
+    }
+    .host-input:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 2px rgba(59,130,246,0.15);
+    }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+<!-- ─── NAV ─────────────────────────────────────────────────────────────────── -->
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm">AI</div>
+      <span class="font-semibold text-white">Portfolio Dashboard</span>
+      <span class="px-2 py-0.5 text-xs rounded-full bg-blue-900/60 text-blue-300 border border-blue-700/50 ml-1">Local</span>
+    </div>
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
+        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9a9 9 0 01-9-9m9 9c1.657 0 3-4.03 3-9s-1.343-9-3-9m0 18c-1.657 0-3-4.03-3-9s1.343-9 3-9"/></svg>
+        <input id="host-input" type="text" value="localhost" placeholder="localhost or Tailscale IP"
+          class="host-input text-sm text-slate-200 rounded-lg px-3 py-1.5 w-52 placeholder-slate-500" />
+      </div>
+      <button onclick="checkAllStatus()" class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sm text-slate-300 transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+        Refresh Status
+      </button>
+      <a href="https://ashishk-yadav.github.io/AI-Portfolio/" target="_blank"
+        class="flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-sm font-medium transition-colors">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+        Public Portfolio
+      </a>
+    </div>
+  </div>
+</nav>
+
+<!-- ─── HERO ─────────────────────────────────────────────────────────────────── -->
+<section class="hero-bg relative overflow-hidden pt-28 pb-20">
+  <!-- Floating orbs -->
+  <div class="orb-1 absolute top-16 right-24 w-64 h-64 rounded-full opacity-10" style="background:radial-gradient(circle,#3b82f6,transparent 70%)"></div>
+  <div class="orb-2 absolute bottom-8 left-16 w-96 h-96 rounded-full opacity-8" style="background:radial-gradient(circle,#06b6d4,transparent 70%)"></div>
+  <div class="orb-3 absolute top-32 left-1/2 w-48 h-48 rounded-full opacity-6" style="background:radial-gradient(circle,#8b5cf6,transparent 70%)"></div>
+
+  <div class="relative max-w-7xl mx-auto px-6">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-10">
+      <div>
+        <div class="flex items-center gap-3 mb-4">
+          <span class="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-900/40 border border-green-700/50 text-green-400 text-xs font-medium">
+            <span class="w-1.5 h-1.5 rounded-full bg-green-400 status-online inline-block"></span>
+            Running on Mac Mini · OrbStack
+          </span>
+        </div>
+        <h1 class="text-4xl lg:text-5xl font-bold text-white mb-3">
+          AI Portfolio <span class="text-blue-400">Command Center</span>
+        </h1>
+        <p class="text-slate-400 text-lg max-w-xl">
+          24 AI projects running as Docker containers. Click any card to launch directly in the browser.
+        </p>
+      </div>
+
+      <!-- Stats -->
+      <div class="grid grid-cols-2 gap-3 lg:min-w-80">
+        <div class="stat-card rounded-xl p-4 text-center">
+          <div class="text-3xl font-bold text-blue-400" id="stat-total">24</div>
+          <div class="text-xs text-slate-400 mt-1">Total Apps</div>
+        </div>
+        <div class="stat-card rounded-xl p-4 text-center">
+          <div class="text-3xl font-bold text-green-400" id="stat-online">—</div>
+          <div class="text-xs text-slate-400 mt-1">Online</div>
+        </div>
+        <div class="stat-card rounded-xl p-4 text-center">
+          <div class="text-3xl font-bold text-cyan-400">20</div>
+          <div class="text-xs text-slate-400 mt-1">Core Profile</div>
+        </div>
+        <div class="stat-card rounded-xl p-4 text-center">
+          <div class="text-3xl font-bold text-purple-400">4</div>
+          <div class="text-xs text-slate-400 mt-1">ML Profile</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Docker quick-ref -->
+    <div class="mt-8 flex flex-wrap gap-2 text-xs font-mono">
+      <span class="px-3 py-1.5 rounded-lg bg-slate-900/70 border border-slate-700/60 text-slate-400">
+        <span class="text-blue-400">docker compose</span> --profile core up -d
+      </span>
+      <span class="px-3 py-1.5 rounded-lg bg-slate-900/70 border border-slate-700/60 text-slate-400">
+        <span class="text-purple-400">docker compose</span> --profile ml up -d
+      </span>
+      <span class="px-3 py-1.5 rounded-lg bg-slate-900/70 border border-slate-700/60 text-slate-400">
+        <span class="text-slate-500">docker compose</span> --profile ml stop
+      </span>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FILTER TABS ───────────────────────────────────────────────────────────── -->
+<section class="sticky top-16 z-40 bg-slate-950/90 backdrop-blur-md border-b border-slate-800/60 py-4">
+  <div class="max-w-7xl mx-auto px-6 flex flex-wrap items-center gap-2">
+    <span class="text-xs text-slate-500 mr-2 font-medium uppercase tracking-wider">Filter</span>
+    <button onclick="setFilter('all')" class="filter-tab active px-4 py-1.5 rounded-full text-sm border border-slate-700 text-slate-300 hover:border-slate-500" data-filter="all">All 24</button>
+    <button onclick="setFilter('core')" class="filter-tab px-4 py-1.5 rounded-full text-sm border border-slate-700 text-slate-300 hover:border-slate-500" data-filter="core">🟢 Core (20)</button>
+    <button onclick="setFilter('ml')" class="filter-tab px-4 py-1.5 rounded-full text-sm border border-slate-700 text-slate-300 hover:border-slate-500" data-filter="ml">🟣 ML (4)</button>
+    <button onclick="setFilter('gen')" class="filter-tab px-4 py-1.5 rounded-full text-sm border border-slate-700 text-slate-300 hover:border-slate-500" data-filter="gen">Gen Bootcamp</button>
+    <button onclick="setFilter('agent')" class="filter-tab px-4 py-1.5 rounded-full text-sm border border-slate-700 text-slate-300 hover:border-slate-500" data-filter="agent">Agent Sessions</button>
+    <div class="flex-1"></div>
+    <span class="text-xs text-slate-500 mr-2">Domain</span>
+    <button onclick="setFilter('enterprise')" class="filter-tab px-3 py-1.5 rounded-full text-xs border border-blue-800/60 text-blue-400 hover:border-blue-600" data-filter="enterprise">Enterprise B2B</button>
+    <button onclick="setFilter('healthtech')" class="filter-tab px-3 py-1.5 rounded-full text-xs border border-green-800/60 text-green-400 hover:border-green-600" data-filter="healthtech">HealthTech</button>
+    <button onclick="setFilter('fintech')" class="filter-tab px-3 py-1.5 rounded-full text-xs border border-orange-800/60 text-orange-400 hover:border-orange-600" data-filter="fintech">FinTech</button>
+    <button onclick="setFilter('general')" class="filter-tab px-3 py-1.5 rounded-full text-xs border border-purple-800/60 text-purple-400 hover:border-purple-600" data-filter="general">General AI</button>
+  </div>
+</section>
+
+<!-- ─── APP GRID ──────────────────────────────────────────────────────────────── -->
+<section class="max-w-7xl mx-auto px-6 py-10">
+  <div id="app-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"></div>
+  <p id="no-results" class="hidden text-center text-slate-500 py-16">No apps match this filter.</p>
+</section>
+
+<!-- ─── FOOTER ────────────────────────────────────────────────────────────────── -->
+<footer class="border-t border-slate-800 py-8 mt-4">
+  <div class="max-w-7xl mx-auto px-6 flex items-center justify-between text-sm text-slate-500">
+    <span>Ashish Yadav · AI Portfolio · Mac Mini M2 · OrbStack</span>
+    <a href="https://ashishk-yadav.github.io/AI-Portfolio/" target="_blank" class="text-blue-400 hover:text-blue-300 transition-colors">Public Portfolio →</a>
+  </div>
+</footer>
+
+<!-- ─── JAVASCRIPT ────────────────────────────────────────────────────────────── -->
+<script>
+// ── Data ──────────────────────────────────────────────────────────────────────
+const apps = [
+  { id:"01", name:"Research Assistant",        port:8501, profile:"core", group:"gen",   domain:"General AI",    level:"Beginner",     tech:["AutoGen","Groq","OpenAlex"],        desc:"Multi-agent pipeline that fetches and summarises academic papers from OpenAlex — search any research topic." },
+  { id:"02", name:"Doctor Booking",            port:8502, profile:"core", group:"gen",   domain:"HealthTech",    level:"Intermediate", tech:["LangChain","Groq","Streamlit"],     desc:"Autonomous appointment scheduling — patient intake, availability check, and booking confirmation agents." },
+  { id:"03", name:"AI Coding Agent",           port:8503, profile:"core", group:"gen",   domain:"Enterprise B2B",level:"Beginner",     tech:["LangChain","ChromaDB","OpenAI"],    desc:"RAG-powered coding assistant that ingests a codebase and answers queries, explains logic, and suggests edits." },
+  { id:"04", name:"Customer Service Agent",    port:8504, profile:"core", group:"gen",   domain:"Enterprise B2B",level:"Intermediate", tech:["LangChain","OpenAI","Streamlit"],   desc:"Context-aware support agent embedded with product docs — handles FAQs, returns, and escalation routing." },
+  { id:"05", name:"Sentiment Classifier",      port:8505, profile:"core", group:"gen",   domain:"Enterprise B2B",level:"Intermediate", tech:["OpenAI Embeddings","SQLite"],       desc:"Review ingestion pipeline with embedding-based sentiment scoring, trend charts, and SQLite persistence." },
+  { id:"06", name:"Resume Generator",          port:8506, profile:"core", group:"gen",   domain:"General AI",    level:"Intermediate", tech:["OpenAI","Fine-tuning","pypdf"],     desc:"Personalised resume and cover letter generator fine-tuned on resume/JD pairs for style-matched output." },
+  { id:"07", name:"Marketing Copy",            port:8507, profile:"core", group:"gen",   domain:"Enterprise B2B",level:"Beginner",     tech:["OpenAI","Pandas","Streamlit"],      desc:"A/B copy variant generator with tone selector and performance logging for iterative campaign testing." },
+  { id:"08", name:"Fine-Tune TinyLlama",       port:8508, profile:"core", group:"gen",   domain:"General AI",    level:"Advanced",     tech:["TinyLlama","QLoRA","PEFT"],         desc:"Domain adaptation of TinyLlama-1.1B via QLoRA on marketing and legal datasets using HuggingFace PEFT." },
+  { id:"09", name:"Image Captioning",          port:8509, profile:"ml",   group:"gen",   domain:"General AI",    level:"Advanced",     tech:["BLIP","HuggingFace","PyTorch"],     desc:"Caption generation via CNN+LSTM with attention — upload an image and get a natural language description." },
+  { id:"10", name:"Activity Recognition",      port:8510, profile:"ml",   group:"gen",   domain:"HealthTech",    level:"Advanced",     tech:["PyTorch LSTM","scikit-learn"],      desc:"Wearable sensor data classification using LSTM — real-time activity detection with model comparison dashboard." },
+  { id:"11", name:"Chest X-Ray Detection",     port:8511, profile:"ml",   group:"gen",   domain:"HealthTech",    level:"Advanced",     tech:["PyTorch","VGG-16","Grad-CAM"],      desc:"Binary pneumonia classifier with Grad-CAM heatmaps — clinical-grade transparency for AI-assisted diagnosis." },
+  { id:"12", name:"Neural Style Transfer",     port:8512, profile:"ml",   group:"gen",   domain:"General AI",    level:"Intermediate", tech:["PyTorch","VGG-19","NST"],           desc:"Artistic style transfer applying VGG-19 NST — upload a content image and a style, blend them at the pixel level." },
+  { id:"13", name:"Legal Summarizer",          port:8513, profile:"core", group:"gen",   domain:"Enterprise B2B",level:"Intermediate", tech:["OpenAI","LangChain","RAG"],         desc:"Multi-strategy summarisation (baseline, RAG, map-reduce, chain refine) with side-by-side evaluation panel." },
+  { id:"14", name:"News Classifier",           port:8514, profile:"core", group:"gen",   domain:"General AI",    level:"Intermediate", tech:["OpenAI","scikit-learn","TF-IDF"],   desc:"Three-approach comparison: TF-IDF+LR, OpenAI Embeddings+LR, and GPT-4o-mini zero-shot prompting." },
+  { id:"15", name:"Multilingual Chatbot",      port:8515, profile:"core", group:"gen",   domain:"Enterprise B2B",level:"Beginner",     tech:["OpenAI","deep-translator"],         desc:"Real-time translation + GPT chat in 50+ languages — built for global enterprise communication use cases." },
+  { id:"16", name:"Document Q&A (RAG)",        port:8516, profile:"core", group:"gen",   domain:"Enterprise B2B",level:"Intermediate", tech:["LangChain","ChromaDB","OpenAI"],    desc:"End-to-end RAG over PDFs and text — chunk, embed, retrieve, answer with inline source citations." },
+  { id:"S1", name:"LLM Setup & Integration",   port:8601, profile:"core", group:"agent", domain:"General AI",    level:"Beginner",     tech:["OpenAI","Ollama","HuggingFace"],    desc:"Comparative setup across OpenAI, Ollama (local), and HuggingFace — API integration fundamentals." },
+  { id:"S2", name:"Chain-of-Thought",          port:8602, profile:"core", group:"agent", domain:"Enterprise B2B",level:"Intermediate", tech:["OpenAI","Ollama","Pandas"],         desc:"CoT reasoning across 10 industry domains: finance, fraud, healthcare, legal, supply chain, edtech." },
+  { id:"S3", name:"RAG Fundamentals",          port:8603, profile:"core", group:"agent", domain:"Enterprise B2B",level:"Intermediate", tech:["LangChain","ChromaDB","OpenAI"],    desc:"Core RAG pipeline: document loading, chunking, embedding, vector retrieval, and grounded generation." },
+  { id:"S4", name:"Text-to-SQL",              port:8604, profile:"core", group:"agent", domain:"Enterprise B2B",level:"Intermediate", tech:["OpenAI","SQLite","LangChain"],      desc:"Natural language to SQL converter over a SQLite database — no schema memorisation required." },
+  { id:"S5", name:"Multi-Agent Orchestration", port:8605, profile:"core", group:"agent", domain:"FinTech",       level:"Advanced",     tech:["LangChain","OpenAI","Streamlit"],   desc:"Orchestrated agents: QnA chatbot, data analyst, hotel review analyser, and risk assessment." },
+  { id:"S6", name:"Browser Automation",        port:8606, profile:"core", group:"agent", domain:"General AI",    level:"Advanced",     tech:["Selenium","BeautifulSoup","LangSmith"],desc:"Selenium-powered web automation with LangSmith observability — scraping, screenshots, and login flows." },
+  { id:"S7", name:"CrewAI Agents",             port:8607, profile:"core", group:"agent", domain:"Enterprise B2B",level:"Advanced",     tech:["CrewAI","OpenAI","LangChain"],      desc:"Role-based agent crews tackling research analysis, multi-perspective debate, and customer support." },
+  { id:"S8", name:"AutoGen FinTech",           port:8608, profile:"core", group:"agent", domain:"FinTech",       level:"Advanced",     tech:["AutoGen","OpenAI","yfinance"],      desc:"Conversational financial analysis with AutoGen agents — live market data via yfinance, interactive charts." },
+];
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+const domainStyle = {
+  "Enterprise B2B": { pill:"bg-blue-900/50 text-blue-300 border-blue-700/60",   glow:"rgba(59,130,246,0.15)",  accent:"#3b82f6" },
+  "HealthTech":     { pill:"bg-green-900/50 text-green-300 border-green-700/60", glow:"rgba(34,197,94,0.15)",   accent:"#22c55e" },
+  "FinTech":        { pill:"bg-orange-900/50 text-orange-300 border-orange-700/60", glow:"rgba(249,115,22,0.15)", accent:"#f97316" },
+  "General AI":     { pill:"bg-purple-900/50 text-purple-300 border-purple-700/60", glow:"rgba(139,92,246,0.15)", accent:"#8b5cf6" },
+};
+const levelStyle = {
+  "Beginner":     "bg-slate-700/60 text-slate-300",
+  "Intermediate": "bg-amber-900/50 text-amber-300",
+  "Advanced":     "bg-red-900/50 text-red-300",
+};
+const profileStyle = {
+  "core": { label:"Core", cls:"bg-cyan-900/40 text-cyan-400 border-cyan-700/50" },
+  "ml":   { label:"ML",   cls:"bg-violet-900/40 text-violet-400 border-violet-700/50" },
+};
+
+function getHost() {
+  return document.getElementById('host-input').value.trim() || 'localhost';
+}
+
+function appUrl(port) {
+  return `http://${getHost()}:${port}`;
+}
+
+// ── Status checking ───────────────────────────────────────────────────────────
+const statusCache = {};
+
+async function checkPort(port) {
+  const dot = document.getElementById(`dot-${port}`);
+  const btn = document.getElementById(`btn-${port}`);
+  if (!dot) return;
+
+  // Set checking state
+  dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+
+  try {
+    const ctrl = new AbortController();
+    const timeout = setTimeout(() => ctrl.abort(), 3000);
+    const res = await fetch(appUrl(port), { method:'GET', mode:'no-cors', signal: ctrl.signal });
+    clearTimeout(timeout);
+    // no-cors fetch succeeds (opaque response) = port is up
+    dot.className = 'w-2 h-2 rounded-full bg-green-400 status-online';
+    if (btn) btn.disabled = false;
+    statusCache[port] = 'online';
+  } catch {
+    dot.className = 'w-2 h-2 rounded-full bg-red-500/70';
+    if (btn) btn.disabled = true;
+    statusCache[port] = 'offline';
+  }
+
+  // Update online count
+  const online = Object.values(statusCache).filter(v => v === 'online').length;
+  document.getElementById('stat-online').textContent = online;
+}
+
+async function checkAllStatus() {
+  for (const app of apps) {
+    checkPort(app.port);
+    await new Promise(r => setTimeout(r, 60)); // slight stagger
+  }
+}
+
+// ── Card builder ──────────────────────────────────────────────────────────────
+function buildCard(app) {
+  const ds = domainStyle[app.domain] || domainStyle["General AI"];
+  const ps = profileStyle[app.profile];
+  const isSession = app.group === 'agent';
+
+  return `
+    <div class="app-card bg-slate-900/70 border border-slate-800/80 rounded-2xl p-5 flex flex-col gap-4 relative overflow-hidden"
+         data-profile="${app.profile}" data-group="${app.group}" data-domain="${app.domain.toLowerCase().replace(/ /g,'')}">
+
+      <!-- subtle domain glow in corner -->
+      <div class="absolute top-0 right-0 w-24 h-24 rounded-full opacity-20 pointer-events-none"
+           style="background:radial-gradient(circle, ${ds.accent}, transparent 70%); transform:translate(30%,-30%)"></div>
+
+      <!-- Header row -->
+      <div class="flex items-start justify-between gap-2">
+        <div class="flex items-center gap-2.5">
+          <!-- ID badge -->
+          <span class="flex-shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold border"
+                style="background:${ds.accent}20; border-color:${ds.accent}40; color:${ds.accent}">
+            ${app.id}
+          </span>
+          <div>
+            <h3 class="font-semibold text-white text-sm leading-tight">${app.name}</h3>
+            <div class="flex items-center gap-1.5 mt-0.5">
+              <!-- status dot -->
+              <span id="dot-${app.port}" class="w-2 h-2 rounded-full bg-slate-600"></span>
+              <span class="port-badge text-xs text-slate-500">:${app.port}</span>
+            </div>
+          </div>
+        </div>
+        <!-- Profile badge -->
+        <span class="flex-shrink-0 px-2 py-0.5 text-xs rounded-full border ${ps.cls}">${ps.label}</span>
+      </div>
+
+      <!-- Description -->
+      <p class="text-slate-400 text-xs leading-relaxed flex-1">${app.desc}</p>
+
+      <!-- Tech pills -->
+      <div class="flex flex-wrap gap-1.5">
+        ${app.tech.map(t => `<span class="px-2 py-0.5 rounded-md text-xs bg-slate-800/80 text-slate-400 border border-slate-700/60">${t}</span>`).join('')}
+      </div>
+
+      <!-- Footer row -->
+      <div class="flex items-center justify-between pt-1 border-t border-slate-800/60">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 rounded-md text-xs border ${ds.pill}">${app.domain}</span>
+          <span class="px-2 py-0.5 rounded-md text-xs ${levelStyle[app.level]}">${app.level}</span>
+        </div>
+        <a id="btn-${app.port}" href="${appUrl(app.port)}" target="_blank"
+           class="launch-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium">
+          Launch
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+        </a>
+      </div>
+    </div>`;
+}
+
+// ── Filter logic ──────────────────────────────────────────────────────────────
+let currentFilter = 'all';
+
+function setFilter(f) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-tab').forEach(el => {
+    el.classList.toggle('active', el.dataset.filter === f);
+  });
+  renderGrid();
+}
+
+function filterApp(app) {
+  switch (currentFilter) {
+    case 'core':       return app.profile === 'core';
+    case 'ml':         return app.profile === 'ml';
+    case 'gen':        return app.group === 'gen';
+    case 'agent':      return app.group === 'agent';
+    case 'enterprise': return app.domain === 'Enterprise B2B';
+    case 'healthtech': return app.domain === 'HealthTech';
+    case 'fintech':    return app.domain === 'FinTech';
+    case 'general':    return app.domain === 'General AI';
+    default:           return true;
+  }
+}
+
+function renderGrid() {
+  const grid = document.getElementById('app-grid');
+  const none = document.getElementById('no-results');
+  const filtered = apps.filter(filterApp);
+  grid.innerHTML = filtered.map(buildCard).join('');
+  none.classList.toggle('hidden', filtered.length > 0);
+}
+
+// ── Host input — update all links live ───────────────────────────────────────
+document.getElementById('host-input').addEventListener('input', () => {
+  apps.forEach(app => {
+    const btn = document.getElementById(`btn-${app.port}`);
+    if (btn) btn.href = appUrl(app.port);
+  });
+});
+
+// ── Nav scroll effect ─────────────────────────────────────────────────────────
+window.addEventListener('scroll', () => {
+  document.getElementById('navbar').classList.toggle('nav-scrolled', window.scrollY > 40);
+});
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+renderGrid();
+// Auto-detect if running locally or via Tailscale
+const host = location.hostname;
+if (host && host !== '' && host !== 'localhost' && !host.includes('github')) {
+  document.getElementById('host-input').value = host;
+}
+// Start status checks after a short delay
+setTimeout(checkAllStatus, 600);
+</script>
+</body>
+</html>
