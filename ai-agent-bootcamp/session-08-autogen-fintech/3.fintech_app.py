@@ -49,64 +49,58 @@ def fetch_stock_data(ticker: str) -> dict:
 
 
 def run_analysis(ticker: str, api_key: str) -> str:
-    """Build agents fresh for each run so the API key is always current."""
-    from autogen import AssistantAgent, UserProxyAgent, register_function, initiate_chats
+    """Two-stage pipeline replicating the AutoGen agent flow without the autogen package.
 
-    llm_config = {"model": "gpt-4o-mini", "api_key": api_key}
+    pyautogen==0.10.0 (AG2 rebranding) broke `from autogen import` — replaced
+    with direct OpenAI calls that preserve the same Analyst → Writer pattern.
 
-    financial_assistant = AssistantAgent(
-        name="FinancialAssistant",
-        llm_config=llm_config,
-    )
-    writer = AssistantAgent(
-        name="Writer",
-        llm_config=llm_config,
-        system_message=(
-            "You are a professional financial report writer. Based only on the data provided, "
-            "generate a full markdown-formatted report. Include: analysis, a data table of key metrics "
-            "(PE, dividends, ROE, etc.), a summary of recent stock prices, and suggest future scenarios. "
-            "Return only the markdown content, no explanations or code blocks."
-        ),
-    )
-    user_proxy = UserProxyAgent(
-        name="User",
-        human_input_mode="NEVER",
-        code_execution_config=False,
-    )
-    register_function(
-        fetch_stock_data,
-        caller=financial_assistant,
-        executor=user_proxy,
-        name="fetch_stock_data",
-        description="Fetch 1-month stock history and key ratios for a given ticker.",
-    )
+    Stage 1 — FinancialAssistant: fetches live data, produces a structured summary.
+    Stage 2 — Writer: takes the summary, generates a full markdown report.
+    """
+    from openai import OpenAI
 
+    client = OpenAI(api_key=api_key)
     date_str = datetime.now().strftime("%Y-%m-%d")
-    financial_prompt = (
-        f"Today is {date_str}. For ticker '{ticker}', call fetch_stock_data(ticker) once and collect the results. "
-        "Return a JSON object summarising all data. Do not add ```json or ``` in the final output."
-    )
 
-    results = initiate_chats([{
-        "sender": user_proxy,
-        "recipient": financial_assistant,
-        "message": financial_prompt,
-        "summary_method": "reflection_with_llm",
-        "summary_args": {"summary_prompt": "Summarise all financial data and return as a JSON object."},
-    }])
-    data_summary = results[0].summary
+    # Stage 1: fetch data and have the analyst summarise it
+    data = fetch_stock_data(ticker)
+    if "error" in data:
+        return f"Could not fetch data for {ticker}: {data['error']}"
 
-    report_results = initiate_chats([{
-        "sender": user_proxy,
-        "recipient": writer,
-        "message": (
-            f"Use the following financial data to generate the report:\n{data_summary}\n\n"
-            "Generate a markdown financial report including tables, summaries, and future scenarios."
-        ),
-        "summary_method": "last_msg",
-        "max_turns": 1,
-    }])
-    return report_results[-1].chat_history[-1]["content"]
+    analyst_response = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": (
+                "You are a financial analyst. Summarise the provided stock data into a "
+                "clear, structured text summary covering valuation ratios, dividends, "
+                "leverage, profitability, and recent price trend."
+            )},
+            {"role": "user", "content": (
+                f"Today is {date_str}. Analyse this data for {ticker}:\n{data}"
+            )},
+        ],
+        temperature=0.2,
+    ).choices[0].message.content
+
+    # Stage 2: writer turns the summary into a full markdown report
+    report = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": (
+                "You are a professional financial report writer. Using only the data provided, "
+                "generate a full markdown report. Include: an executive summary, a table of key "
+                "metrics (PE, forward PE, P/B, D/E, ROE, dividends), a 10-day price trend summary, "
+                "risk factors, and two forward-looking scenarios (bull/bear). "
+                "Return only the markdown — no code blocks, no preamble."
+            )},
+            {"role": "user", "content": (
+                f"Write a financial report for {ticker} based on this analyst summary:\n\n{analyst_response}"
+            )},
+        ],
+        temperature=0.3,
+    ).choices[0].message.content
+
+    return report
 
 
 # ── UI ───────────────────────────────────────────────────────────────────────
