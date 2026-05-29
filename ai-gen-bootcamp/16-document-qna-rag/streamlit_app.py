@@ -5,7 +5,7 @@
 import os
 import io
 import time
-from typing import List, Tuple
+from typing import Any, List, Tuple
 
 import streamlit as st
 from dotenv import load_dotenv
@@ -132,7 +132,7 @@ def split_pdf_into_docs_per_page(uploaded_file=None, path: str = "", chunk_size=
     except Exception:
         return []
 
-def build_or_load_chroma(docs: List[Document], persist_dir: str, embedding_model: OpenAIEmbeddings, force_rebuild=False):
+def build_or_load_chroma(docs: List[Document], persist_dir: str, embedding_model: Any, force_rebuild=False):
     if os.path.exists(persist_dir) and not force_rebuild:
         vectordb = Chroma(persist_directory=persist_dir, embedding_function=embedding_model)
         return vectordb, False
