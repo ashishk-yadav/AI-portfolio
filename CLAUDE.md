@@ -486,3 +486,122 @@ Once containers are running, access from any Tailscale device:
 4. Test: `docker compose --profile core up -d` — verify all 20 core containers start and are reachable
 5. Test: `docker compose --profile ml up -d` — verify 4 ML containers start and models load
 6. Update `docs/index.html` demo links to point to `http://localhost:<port>` for local use
+
+---
+
+## Current State (as of 2026-05-29)
+
+### Infrastructure — DONE
+
+| Component | Status | Detail |
+|-----------|--------|--------|
+| 24 Docker containers | ✅ Running | OrbStack on Mac Mini M2 |
+| docker-compose.yml | ✅ | Two profiles: `core` (20 apps) + `ml` (4 apps) |
+| nginx reverse proxy | ✅ Running | Port 80, serves dashboard + proxies all 24 apps |
+| dashboard.html | ✅ Live | `http://localhost/` — card grid, status dots, Launch buttons |
+| Cloudflare Tunnel | ⏸️ Parked | Config in compose, awaiting domain on Cloudflare |
+| Streamlit Cloud | 01, 03 live | `https://01-autogen-research-agent.streamlit.app/` etc. |
+
+### Key Infrastructure Decisions
+
+- **All apps use `--server.baseUrlPath=/app/NN`** set via `command:` in docker-compose.yml (not in Dockerfile CMD — cache issue). This is what makes nginx sub-path proxying work.
+- **Dashboard served by nginx** — use `http://localhost/` not `file://`. Launch buttons use relative paths (`/app/01/`) in proxy mode.
+- **API keys** — single `.env` at repo root mounted into all containers. Contains: `OPENAI_API_KEY`, `GROQ_API_KEY`, `ANTHROPIC_API_KEY`, `HUGGINGFACE_TOKEN`, `HF_TOKEN`, `LANGSMITH_API_KEY`, `SCRAPINGDOG_API_KEY`, `CLOUDFLARE_TUNNEL_TOKEN`.
+- **llm_provider.py** — provider-agnostic sidebar (OpenAI/Groq/Anthropic) exists in `shared/` and is copied to each project that needs it.
+
+### Entry Points (verified from filesystem)
+
+| Container | Entry Point | Port |
+|-----------|------------|------|
+| 01-research-assistant | `app.py` | 8501 |
+| 02-doctor-booking | `streamlit_ui.py` | 8502 |
+| 03-ai-coding-agent | `main.py` | 8503 |
+| 04-customer-service-agent | `app.py` | 8504 |
+| 05-sentiment-classifier | `app.py` | 8505 |
+| 06-resume-generator | `app/app.py` | 8506 |
+| 07-marketing-copy | `app.py` | 8507 |
+| 08-finetune-tinyllama | `app.py` | 8508 |
+| 09-image-captioning | `app.py` | 8509 |
+| 10-activity-recognition | `streamlit_compare_model.py` | 8510 |
+| 11-xray-detection | `streamlit_app.py` | 8511 |
+| 12-neural-style-transfer | `streamlit_app.py` | 8512 |
+| 13-legal-summarizer | `app.py` | 8513 |
+| 14-news-classifier | `streamlit_app.py` | 8514 |
+| 15-multilingual-chatbot | `main.py` | 8515 |
+| 16-document-qna-rag | `streamlit_app.py` | 8516 |
+| s1-llm-setup | `app.py` | 8601 |
+| s2-chain-of-thought | `app.py` | 8602 |
+| s3-rag-fundamentals | `app.py` | 8603 |
+| s4-text-to-sql | `app.py` | 8604 |
+| s5-multi-agent-orchestration | `2.master_agent_ui.py` | 8605 |
+| s6-browser-automation | `app.py` | 8606 |
+| s7-crewai-agents | `6.multi_debate_system.py` | 8607 |
+| s8-autogen-fintech | `3.fintech_app.py` | 8608 |
+
+### App Test Status
+
+| # | Name | Status | Fix Applied |
+|---|------|--------|-------------|
+| 01 | Research Assistant | ✅ Confirmed | OpenAlex API, Unicode fix, Enter-to-search |
+| 02 | Doctor Booking | 🔄 Retest | Provider sidebar added (was Groq-only hardcoded) |
+| 03 | AI Coding Agent | ✅ Confirmed | — |
+| 04 | Customer Service Agent | 🔄 Retest | LangChain agent → direct RAG pipeline; ChromaDB EphemeralClient |
+| 05 | Sentiment Classifier | 🔄 Retest | Auto-init SQLite DB; sample CSV; SerpAPI instructions |
+| 06 | Resume Generator | ✅ Confirmed | — |
+| 07 | Marketing Copy | 🔄 Retest | Added missing matplotlib==3.9.2 |
+| 08 | Fine-Tune TinyLlama | ⬜ Not tested | |
+| 09 | Image Captioning | ⬜ Not tested | |
+| 10 | Activity Recognition | ✅ Confirmed | — |
+| 11 | X-Ray Detection | ⬜ Not tested | |
+| 12 | Neural Style Transfer | ✅ Confirmed | — |
+| 13 | Legal Summarizer | 🔄 Retest | PyPDF2 → pypdf in utils/io.py |
+| 14 | News Classifier | ⬜ Not tested | |
+| 15 | Multilingual Chatbot | ✅ Confirmed | — |
+| 16 | Document Q&A (RAG) | ✅ Confirmed | OpenAIEmbeddings type hint → Any |
+| S1 | LLM Setup | ✅ Confirmed | — |
+| S2 | Chain-of-Thought | ✅ Confirmed | — |
+| S3 | RAG Fundamentals | 🔄 Retest | ChromaDB EphemeralClient; vectorstore cached in session_state |
+| S4 | Text-to-SQL | ✅ Confirmed | — |
+| S5 | Multi-Agent Orchestration | ⬜ Not tested | |
+| S6 | Browser Automation | ⬜ Not tested | |
+| S7 | CrewAI Agents | 🔄 Retest | langchain_community → langchain_openai; module-level crash fixed |
+| S8 | AutoGen FinTech | 🔄 Retest | pyautogen broken → direct OpenAI two-stage pipeline |
+
+### Fixes Applied During Docker Testing
+
+| Project | Bug | Fix |
+|---------|-----|-----|
+| All 24 | Dockerfile CMD syntax error (missing `\` continuation) | Fixed all 24 Dockerfiles |
+| All 24 | `--server.baseUrlPath` not propagating (Docker cache) | Added `command:` override in docker-compose.yml |
+| All 24 | Dashboard Launch buttons opened current page (`href="#"` async race) | Set href at render time in buildCard() |
+| All apps via nginx | White tab — static assets 404 without baseUrlPath | Fixed by `command:` override getting baseUrlPath into containers |
+| 01 | `anthropic==0.49.0` conflicts with `langchain-anthropic==0.3.15` | Bumped to `anthropic==0.52.0` across 9 projects |
+| 01 | `wordcloud` needs build-essential (C headers) | Added `apt-get install build-essential` to Dockerfile |
+| 01 | BLIP pre-download step wrong (app uses HF Inference API) | Removed transformers pre-download from Dockerfile |
+| 02 | Groq-only hardcoded, invalid key | Added llm_provider.py, provider sidebar, removed fastapi/uvicorn deps |
+| 04 | LangChain agent parse failures; ChromaDB tenant bug | Replaced initialize_agent with direct RAG→LLM pipeline |
+| 05 | No test data for 3 input modes | Auto-init SQLite, sample CSV, SerpAPI instructions |
+| 07 | `matplotlib` missing from requirements | Added `matplotlib==3.9.2` |
+| 08 | BLIP pre-download → wrong (uses HF API) | Removed from Dockerfile |
+| 13 | `import PyPDF2` (not installed, replaced by pypdf) | `from pypdf import PdfReader` |
+| 16 | `OpenAIEmbeddings` used as type hint, never imported | Changed to `Any` |
+| S3 | ChromaDB `default_tenant` error on repeated questions | EphemeralClient + vectorstore cached in session_state |
+| S7 | `from langchain_community.chat_models import ChatOpenAI` broken | `from langchain_openai import ChatOpenAI` |
+| S8 | `from autogen import` broken (AG2 rebranding) | Direct OpenAI Analyst→Writer pipeline |
+
+### Remaining Work
+
+1. **Retest** apps marked 🔄 (02, 04, 05, 07, 13, S3, S7, S8)
+2. **Test** apps marked ⬜ (08, 09, 11, 14, S5, S6)
+3. **Cloudflare Tunnel** — add domain to Cloudflare, get tunnel token, add to `.env`, start `cloudflare-tunnel` container
+4. **Portfolio HTML** (`docs/index.html`) — update demo URLs for any additional Streamlit Cloud deployments
+5. **Docker daily ops**:
+   ```bash
+   # Start everything
+   docker compose --profile core up -d
+   docker compose --profile ml up -d   # before ML demos
+   # Logs
+   docker compose logs -f <container-name>
+   # Rebuild one app after a fix
+   docker compose build <service> && docker compose up -d --force-recreate <service>
+   ```
