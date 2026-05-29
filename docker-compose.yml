@@ -2,8 +2,8 @@ services:
 
   # ─── AI Gen Bootcamp: Core (01-08) ───────────────────────────────────────────
 
-  research-assistant:
-    container_name: research-assistant
+  01-research-assistant:
+    container_name: 01-research-assistant
     build:
       context: ai-gen-bootcamp/01-autogen-research-agent
       dockerfile: Dockerfile
@@ -14,8 +14,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  doctor-booking:
-    container_name: doctor-booking
+  02-doctor-booking:
+    container_name: 02-doctor-booking
     build:
       context: ai-gen-bootcamp/02-multi-agent-doctor-booking
       dockerfile: Dockerfile
@@ -26,8 +26,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  ai-coding-agent:
-    container_name: ai-coding-agent
+  03-ai-coding-agent:
+    container_name: 03-ai-coding-agent
     build:
       context: ai-gen-bootcamp/03-ai-coding-agent
       dockerfile: Dockerfile
@@ -38,8 +38,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  customer-service-agent:
-    container_name: customer-service-agent
+  04-customer-service-agent:
+    container_name: 04-customer-service-agent
     build:
       context: ai-gen-bootcamp/04-customer-service-agent
       dockerfile: Dockerfile
@@ -50,8 +50,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  sentiment-classifier:
-    container_name: sentiment-classifier
+  05-sentiment-classifier:
+    container_name: 05-sentiment-classifier
     build:
       context: ai-gen-bootcamp/05-product-sentiment-classifier
       dockerfile: Dockerfile
@@ -62,8 +62,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  resume-generator:
-    container_name: resume-generator
+  06-resume-generator:
+    container_name: 06-resume-generator
     build:
       context: ai-gen-bootcamp/06-resume-cover-letter-generator
       dockerfile: Dockerfile
@@ -74,8 +74,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  marketing-copy:
-    container_name: marketing-copy
+  07-marketing-copy:
+    container_name: 07-marketing-copy
     build:
       context: ai-gen-bootcamp/07-marketing-copy-generator
       dockerfile: Dockerfile
@@ -86,8 +86,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  finetune-tinyllama:
-    container_name: finetune-tinyllama
+  08-finetune-tinyllama:
+    container_name: 08-finetune-tinyllama
     build:
       context: ai-gen-bootcamp/08-finetune-tinyllama
       dockerfile: Dockerfile
@@ -100,8 +100,8 @@ services:
 
   # ─── AI Gen Bootcamp: ML (09-12) ─────────────────────────────────────────────
 
-  image-captioning:
-    container_name: image-captioning
+  09-image-captioning:
+    container_name: 09-image-captioning
     build:
       context: ai-gen-bootcamp/09-image-captioning-cnn-lstm
       dockerfile: Dockerfile
@@ -112,8 +112,8 @@ services:
     restart: unless-stopped
     profiles: [ml]
 
-  activity-recognition:
-    container_name: activity-recognition
+  10-activity-recognition:
+    container_name: 10-activity-recognition
     build:
       context: ai-gen-bootcamp/10-human-activity-recognition
       dockerfile: Dockerfile
@@ -124,8 +124,8 @@ services:
     restart: unless-stopped
     profiles: [ml]
 
-  xray-detection:
-    container_name: xray-detection
+  11-xray-detection:
+    container_name: 11-xray-detection
     build:
       context: ai-gen-bootcamp/11-chest-xray-detection
       dockerfile: Dockerfile
@@ -136,8 +136,8 @@ services:
     restart: unless-stopped
     profiles: [ml]
 
-  neural-style-transfer:
-    container_name: neural-style-transfer
+  12-neural-style-transfer:
+    container_name: 12-neural-style-transfer
     build:
       context: ai-gen-bootcamp/12-neural-style-transfer
       dockerfile: Dockerfile
@@ -150,8 +150,8 @@ services:
 
   # ─── AI Gen Bootcamp: Core (13-16) ───────────────────────────────────────────
 
-  legal-summarizer:
-    container_name: legal-summarizer
+  13-legal-summarizer:
+    container_name: 13-legal-summarizer
     build:
       context: ai-gen-bootcamp/13-legal-doc-summarizer
       dockerfile: Dockerfile
@@ -162,8 +162,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  news-classifier:
-    container_name: news-classifier
+  14-news-classifier:
+    container_name: 14-news-classifier
     build:
       context: ai-gen-bootcamp/14-news-topic-classifier
       dockerfile: Dockerfile
@@ -174,8 +174,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  multilingual-chatbot:
-    container_name: multilingual-chatbot
+  15-multilingual-chatbot:
+    container_name: 15-multilingual-chatbot
     build:
       context: ai-gen-bootcamp/15-multilingual-chatbot
       dockerfile: Dockerfile
@@ -186,8 +186,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  document-qna-rag:
-    container_name: document-qna-rag
+  16-document-qna-rag:
+    container_name: 16-document-qna-rag
     build:
       context: ai-gen-bootcamp/16-document-qna-rag
       dockerfile: Dockerfile
@@ -198,10 +198,10 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  # ─── AI Agent Bootcamp: Sessions (S1-S8) ─────────────────────────────────────
+  # ─── AI Agent Bootcamp: Sessions (s1-s8) ─────────────────────────────────────
 
-  llm-setup:
-    container_name: llm-setup
+  s1-llm-setup:
+    container_name: s1-llm-setup
     build:
       context: ai-agent-bootcamp/session-01-llm-setup
       dockerfile: Dockerfile
@@ -212,8 +212,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  chain-of-thought:
-    container_name: chain-of-thought
+  s2-chain-of-thought:
+    container_name: s2-chain-of-thought
     build:
       context: ai-agent-bootcamp/session-02-chain-of-thought
       dockerfile: Dockerfile
@@ -224,8 +224,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  rag-fundamentals:
-    container_name: rag-fundamentals
+  s3-rag-fundamentals:
+    container_name: s3-rag-fundamentals
     build:
       context: ai-agent-bootcamp/session-03-rag-fundamentals
       dockerfile: Dockerfile
@@ -236,8 +236,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  text-to-sql:
-    container_name: text-to-sql
+  s4-text-to-sql:
+    container_name: s4-text-to-sql
     build:
       context: ai-agent-bootcamp/session-04-text-to-sql
       dockerfile: Dockerfile
@@ -248,8 +248,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  multi-agent-orchestration:
-    container_name: multi-agent-orchestration
+  s5-multi-agent-orchestration:
+    container_name: s5-multi-agent-orchestration
     build:
       context: ai-agent-bootcamp/session-05-multi-agent-orchestration
       dockerfile: Dockerfile
@@ -260,8 +260,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  browser-automation:
-    container_name: browser-automation
+  s6-browser-automation:
+    container_name: s6-browser-automation
     build:
       context: ai-agent-bootcamp/session-06-browser-automation
       dockerfile: Dockerfile
@@ -272,8 +272,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  crewai-agents:
-    container_name: crewai-agents
+  s7-crewai-agents:
+    container_name: s7-crewai-agents
     build:
       context: ai-agent-bootcamp/session-07-crewai-agents
       dockerfile: Dockerfile
@@ -284,8 +284,8 @@ services:
     restart: unless-stopped
     profiles: [core]
 
-  autogen-fintech:
-    container_name: autogen-fintech
+  s8-autogen-fintech:
+    container_name: s8-autogen-fintech
     build:
       context: ai-agent-bootcamp/session-08-autogen-fintech
       dockerfile: Dockerfile
