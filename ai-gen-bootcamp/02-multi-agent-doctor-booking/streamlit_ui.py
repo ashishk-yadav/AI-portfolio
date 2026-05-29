@@ -6,38 +6,16 @@ load_dotenv()
 
 st.set_page_config(page_title="Multi-Agent Doctor Booking", page_icon="🩺", layout="centered")
 
+from llm_provider import provider_sidebar, get_langchain_llm
 
-# ── Key sidebar — must come before any LLM imports ──────────────────────────
-def _require_keys(*pairs):
-    with st.sidebar:
-        st.markdown("### 🔑 API Keys")
-        st.caption("Used for this session only — never stored.")
-        for k, lbl, ph in pairs:
-            val = st.text_input(lbl, type="password", placeholder=ph, key=f"_k_{k}")
-            if val:
-                os.environ[k] = val
-    still = [lbl for k, lbl, _ in pairs if not os.getenv(k)]
-    if still:
-        st.info(f"👈 Enter your {' and '.join(still)} in the sidebar to run this demo.")
-        st.stop()
+llm_cfg = provider_sidebar(key_prefix="booking")
 
-
-_require_keys(
-    ("GROQ_API_KEY", "Groq API Key", "your-groq-api-key"),
-)
-
-# ── LLM imports (safe — key is set above) ───────────────────────────────────
-from langchain_groq import ChatGroq
 from langchain.schema import HumanMessage, SystemMessage
 
 
 # ── Agents ──────────────────────────────────────────────────────────────────
 def get_llm():
-    return ChatGroq(
-        model="llama-3.1-8b-instant",
-        api_key=os.getenv("GROQ_API_KEY"),
-        temperature=0.3,
-    )
+    return get_langchain_llm(temperature=0.3)
 
 
 def intake_agent(patient_id: str, query: str, llm) -> str:
@@ -83,8 +61,8 @@ def confirmation_agent(patient_id: str, selected_slot: str, intake_summary: str,
 # ── UI ───────────────────────────────────────────────────────────────────────
 st.title("🩺 Multi-Agent Doctor Booking System")
 st.caption(
-    "Three-agent LangChain pipeline — intake → availability → confirmation. "
-    "Powered by Groq (Llama 3.1)."
+    f"Three-agent LangChain pipeline — intake → availability → confirmation. "
+    f"Powered by {llm_cfg['provider']}."
 )
 
 with st.sidebar:
