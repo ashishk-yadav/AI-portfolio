@@ -295,21 +295,17 @@ const statusCache = {};
 
 async function checkPort(app) {
   const dot = document.getElementById(`dot-${app.port}`);
-  const btn = document.getElementById(`btn-${app.port}`);
   if (!dot) return;
   dot.className = 'w-2 h-2 rounded-full bg-slate-500';
   try {
     const ctrl = new AbortController();
-    const timeout = setTimeout(() => ctrl.abort(), 3000);
-    const url = appUrl(app);
-    await fetch(url, { method:'GET', mode:'no-cors', signal: ctrl.signal });
+    const timeout = setTimeout(() => ctrl.abort(), 4000);
+    await fetch(appUrl(app), { method:'GET', mode:'no-cors', signal: ctrl.signal });
     clearTimeout(timeout);
     dot.className = 'w-2 h-2 rounded-full bg-green-400 status-online';
-    if (btn) { btn.disabled = false; btn.href = appUrl(app); }
     statusCache[app.port] = 'online';
   } catch {
     dot.className = 'w-2 h-2 rounded-full bg-red-500/70';
-    if (btn) btn.disabled = true;
     statusCache[app.port] = 'offline';
   }
   const online = Object.values(statusCache).filter(v => v === 'online').length;
@@ -372,7 +368,7 @@ function buildCard(app) {
           <span class="px-2 py-0.5 rounded-md text-xs border ${ds.pill}">${app.domain}</span>
           <span class="px-2 py-0.5 rounded-md text-xs ${levelStyle[app.level]}">${app.level}</span>
         </div>
-        <a id="btn-${app.port}" href="#" target="_blank"
+        <a id="btn-${app.port}" href="${appUrl(app)}" target="_blank"
            class="launch-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-medium">
           Launch
           <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
@@ -414,14 +410,9 @@ function renderGrid() {
   none.classList.toggle('hidden', filtered.length > 0);
 }
 
-// ── Host input — update all links live ───────────────────────────────────────
+// ── Host input — re-render grid so all hrefs pick up the new host ────────────
 document.getElementById('host-input').addEventListener('input', () => {
-  if (!isProxyMode()) {
-    apps.forEach(app => {
-      const btn = document.getElementById(`btn-${app.port}`);
-      if (btn) btn.href = appUrl(app);
-    });
-  }
+  if (!isProxyMode()) renderGrid();
 });
 
 // ── Nav scroll effect ─────────────────────────────────────────────────────────
