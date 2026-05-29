@@ -1,10 +1,16 @@
 # customer_support_agent.py — Provider-agnostic RAG + Order Lookup
+#
+# Replaced LangChain initialize_agent (CONVERSATIONAL_REACT_DESCRIPTION) with a
+# direct retrieve→answer pipeline. The old agent approach caused parse failures
+# with non-OpenAI LLMs and relied on deprecated agent.run() interface.
 
 import os
-from langchain.agents import initialize_agent, AgentType, Tool
-from langchain.memory import ConversationBufferMemory
-from langchain_community.vectorstores import Chroma
+import chromadb
+from langchain.schema import HumanMessage, SystemMessage
+from langchain_chroma import Chroma
 from langchain_community.document_loaders import TextLoader
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.memory import ConversationBufferMemory
 from llm_provider import get_langchain_llm, get_langchain_embeddings
 
 
@@ -12,8 +18,7 @@ def load_support_docs(docs_dir="docs"):
     all_docs = []
     for filename in os.listdir(docs_dir):
         if filename.endswith(".txt"):
-            file_path = os.path.join(docs_dir, filename)
-            loader = TextLoader(file_path)
+            loader = TextLoader(os.path.join(docs_dir, filename))
             docs = loader.load()
             for d in docs:
                 d.metadata["source"] = filename
@@ -22,22 +27,18 @@ def load_support_docs(docs_dir="docs"):
 
 
 def build_retriever(docs):
+    """Build an in-memory ChromaDB retriever — avoids the 0.5.x tenant init bug."""
+    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    split_docs = splitter.split_documents(docs)
     embeddings = get_langchain_embeddings()
-    vectordb = Chroma.from_documents(docs, embeddings, persist_directory="chroma_db")
-    return vectordb.as_retriever()
+    client = chromadb.EphemeralClient()
+    vectordb = Chroma.from_documents(split_docs, embeddings,
+                                     collection_name="support_docs", client=client)
+    return vectordb.as_retriever(search_kwargs={"k": 3})
 
 
-def rag_tool_func(query, retriever):
-    results = retriever.get_relevant_documents(query)
-    if not results:
-        return "Sorry, I couldn't find any information in our knowledge base."
-    return "\n\n".join(
-        [f"From {r.metadata['source']}: {r.page_content.strip()}" for r in results]
-    )
-
-
-def order_lookup_tool_func(order_id, orders):
-    order_id = order_id.replace("```", "").strip()
+def order_lookup(order_id: str, orders: list) -> str:
+    order_id = order_id.strip()
     for o in orders:
         if o["order_id"] == order_id:
             return (
@@ -46,28 +47,57 @@ def order_lookup_tool_func(order_id, orders):
                 f"Status: {o['status']}\n"
                 f"Date: {o['date']}"
             )
-    return f"Sorry, I could not find any order with ID {order_id}."
+    return f"No order found with ID '{order_id}'."
 
 
-def create_agent(retriever, orders):
-    rag_tool = Tool(
-        name="KnowledgeBaseSearch",
-        func=lambda query: rag_tool_func(query, retriever),
-        description="Use this tool to answer customer support questions using company documents.",
-    )
-    order_lookup_tool = Tool(
-        name="OrderLookup",
-        func=lambda order_id: order_lookup_tool_func(order_id, orders),
-        description="Use this tool to look up the status of a customer's order by order ID. The user must provide an order ID.",
-    )
-    llm = get_langchain_llm(temperature=0.0)
-    memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-    agent = initialize_agent(
-        tools=[order_lookup_tool, rag_tool],
-        llm=llm,
-        agent=AgentType.CONVERSATIONAL_REACT_DESCRIPTION,
-        memory=memory,
-        verbose=False,
-        handle_parsing_errors=True,
-    )
-    return agent
+class SupportAgent:
+    """Direct retrieve→answer agent — no LangChain agent framework needed."""
+
+    def __init__(self, retriever, orders):
+        self.retriever = retriever
+        self.orders = orders
+        self.memory = ConversationBufferMemory(return_messages=True)
+
+    def run(self, query: str) -> str:
+        llm = get_langchain_llm(temperature=0.0)
+
+        # Check if query looks like an order lookup
+        q_lower = query.lower()
+        order_context = ""
+        if any(w in q_lower for w in ["order", "status", "shipment", "tracking", "delivery"]):
+            # Try to extract an order ID (simple heuristic: uppercase alphanumeric token)
+            import re
+            ids = re.findall(r'\b[A-Z0-9]{4,}\b', query)
+            if ids:
+                order_context = "\n\nOrder lookup result:\n" + order_lookup(ids[0], self.orders)
+
+        # RAG retrieval
+        rag_docs = self.retriever.get_relevant_documents(query)
+        rag_context = "\n\n".join(
+            [f"[{d.metadata.get('source','doc')}]: {d.page_content.strip()}" for d in rag_docs]
+        ) if rag_docs else "No relevant documentation found."
+
+        # Build conversation history
+        history = self.memory.load_memory_variables({}).get("history", [])
+        history_text = "\n".join(
+            [f"{'User' if m.type == 'human' else 'Agent'}: {m.content}" for m in history[-6:]]
+        ) if history else ""
+
+        prompt = f"""You are a friendly and helpful customer support agent.
+Use the knowledge base excerpts and order information below to answer the customer's question accurately.
+If you cannot find the answer, say so honestly and offer to escalate.
+
+Knowledge Base:
+{rag_context}
+{order_context}
+
+{'Conversation so far:' + chr(10) + history_text if history_text else ''}
+
+Customer: {query}
+Agent:"""
+
+        response = llm.invoke([HumanMessage(content=prompt)]).content.strip()
+
+        # Update memory
+        self.memory.save_context({"input": query}, {"output": response})
+        return response
