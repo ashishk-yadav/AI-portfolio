@@ -295,3 +295,51 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+
+  # ─── Reverse Proxy ───────────────────────────────────────────────────────────
+
+  nginx-dashboard:
+    container_name: nginx-dashboard
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
+    ports:
+      - "80:80"
+    restart: unless-stopped
+    profiles: [core]
+    depends_on:
+      - 01-research-assistant
+      - 02-doctor-booking
+      - 03-ai-coding-agent
+      - 04-customer-service-agent
+      - 05-sentiment-classifier
+      - 06-resume-generator
+      - 07-marketing-copy
+      - 08-finetune-tinyllama
+      - 09-image-captioning
+      - 10-activity-recognition
+      - 11-xray-detection
+      - 12-neural-style-transfer
+      - 13-legal-summarizer
+      - 14-news-classifier
+      - 15-multilingual-chatbot
+      - 16-document-qna-rag
+      - s1-llm-setup
+      - s2-chain-of-thought
+      - s3-rag-fundamentals
+      - s4-text-to-sql
+      - s5-multi-agent-orchestration
+      - s6-browser-automation
+      - s7-crewai-agents
+      - s8-autogen-fintech
+
+  # ─── Cloudflare Tunnel ───────────────────────────────────────────────────────
+
+  cloudflare-tunnel:
+    container_name: cloudflare-tunnel
+    image: cloudflare/cloudflared:latest
+    command: tunnel --no-autoupdate run
+    environment:
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    restart: unless-stopped
+    profiles: [core]
