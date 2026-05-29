@@ -1,11 +1,11 @@
 import io
-import PyPDF2
+from pypdf import PdfReader
 import requests
 from bs4 import BeautifulSoup
 
 def load_file(uploaded):
     if uploaded.type == "application/pdf":
-        reader = PyPDF2.PdfReader(uploaded)
+        reader = PdfReader(uploaded)
         text = " ".join([p.extract_text() for p in reader.pages if p.extract_text()])
     else:
         text = uploaded.read().decode("utf-8")
@@ -37,7 +37,7 @@ def load_from_url(url: str, timeout: int = 20, max_bytes: int = 20*1024*1024):
 
     # Heuristic: if content type says PDF or URL endswith .pdf -> treat as PDF
     if "pdf" in ctype or url.lower().endswith(".pdf"):
-        reader = PyPDF2.PdfReader(buf)
+        reader = PdfReader(buf)
         text = " ".join([p.extract_text() or "" for p in reader.pages])
         meta.update({"type": "pdf", "pages": len(reader.pages)})
         return text.strip(), meta
