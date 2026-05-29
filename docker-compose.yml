@@ -13,6 +13,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/01"]
 
   02-doctor-booking:
     container_name: 02-doctor-booking
@@ -25,6 +26,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","streamlit_ui.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/02"]
 
   03-ai-coding-agent:
     container_name: 03-ai-coding-agent
@@ -37,6 +39,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","main.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/03"]
 
   04-customer-service-agent:
     container_name: 04-customer-service-agent
@@ -49,6 +52,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/04"]
 
   05-sentiment-classifier:
     container_name: 05-sentiment-classifier
@@ -61,6 +65,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/05"]
 
   06-resume-generator:
     container_name: 06-resume-generator
@@ -73,6 +78,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","app/app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/06"]
 
   07-marketing-copy:
     container_name: 07-marketing-copy
@@ -85,6 +91,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/07"]
 
   08-finetune-tinyllama:
     container_name: 08-finetune-tinyllama
@@ -97,6 +104,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/08"]
 
   # ─── AI Gen Bootcamp: ML (09-12) ─────────────────────────────────────────────
 
@@ -111,6 +119,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [ml]
+    command: ["streamlit","run","app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/09"]
 
   10-activity-recognition:
     container_name: 10-activity-recognition
@@ -123,6 +132,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [ml]
+    command: ["streamlit","run","streamlit_compare_model.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/10"]
 
   11-xray-detection:
     container_name: 11-xray-detection
@@ -135,6 +145,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [ml]
+    command: ["streamlit","run","streamlit_app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/11"]
 
   12-neural-style-transfer:
     container_name: 12-neural-style-transfer
@@ -147,6 +158,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [ml]
+    command: ["streamlit","run","streamlit_app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/12"]
 
   # ─── AI Gen Bootcamp: Core (13-16) ───────────────────────────────────────────
 
@@ -161,6 +173,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/13"]
 
   14-news-classifier:
     container_name: 14-news-classifier
@@ -173,6 +186,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","streamlit_app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/14"]
 
   15-multilingual-chatbot:
     container_name: 15-multilingual-chatbot
@@ -185,6 +199,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","main.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/15"]
 
   16-document-qna-rag:
     container_name: 16-document-qna-rag
@@ -197,6 +212,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","streamlit_app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/16"]
 
   # ─── AI Agent Bootcamp: Sessions (s1-s8) ─────────────────────────────────────
 
@@ -211,6 +227,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/s1"]
 
   s2-chain-of-thought:
     container_name: s2-chain-of-thought
@@ -223,6 +240,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/s2"]
 
   s3-rag-fundamentals:
     container_name: s3-rag-fundamentals
@@ -235,6 +253,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/s3"]
 
   s4-text-to-sql:
     container_name: s4-text-to-sql
@@ -247,6 +266,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/s4"]
 
   s5-multi-agent-orchestration:
     container_name: s5-multi-agent-orchestration
@@ -259,6 +279,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","2.master_agent_ui.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/s5"]
 
   s6-browser-automation:
     container_name: s6-browser-automation
@@ -271,6 +292,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/s6"]
 
   s7-crewai-agents:
     container_name: s7-crewai-agents
@@ -283,6 +305,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","6.multi_debate_system.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/s7"]
 
   s8-autogen-fintech:
     container_name: s8-autogen-fintech
@@ -295,6 +318,7 @@ services:
     env_file: .env
     restart: unless-stopped
     profiles: [core]
+    command: ["streamlit","run","3.fintech_app.py","--server.port=8501","--server.address=0.0.0.0","--server.headless=true","--server.baseUrlPath=/app/s8"]
 
   # ─── Reverse Proxy ───────────────────────────────────────────────────────────
 
