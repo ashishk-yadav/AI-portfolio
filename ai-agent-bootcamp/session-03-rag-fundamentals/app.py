@@ -22,24 +22,44 @@ def get_openai_key():
     return os.getenv("OPENAI_API_KEY")
 
 
-def build_rag(text: str, api_key: str):
-    import chromadb
-    from langchain_openai import OpenAIEmbeddings, ChatOpenAI
+def get_llm(api_key: str):
+    from langchain_openai import ChatOpenAI
+    return ChatOpenAI(model="gpt-4o-mini", openai_api_key=api_key, temperature=0)
+
+
+def build_rag_cached(text: str, api_key: str):
+    """Build vectorstore once per unique document — cached in session_state.
+
+    chromadb 0.5.x has a global-state bug: creating a second EphemeralClient()
+    in the same process loses the default_tenant. Caching the client keeps it
+    alive for the lifetime of the session so subsequent questions reuse it.
+    """
+    import hashlib, chromadb
+    from langchain_openai import OpenAIEmbeddings
     from langchain.text_splitter import RecursiveCharacterTextSplitter
     from langchain_chroma import Chroma
     from langchain.schema import Document
+
+    text_hash = hashlib.md5(text.encode()).hexdigest()
+
+    # Reuse existing vectorstore if the document hasn't changed
+    if (st.session_state.get("vs_hash") == text_hash and
+            st.session_state.get("vectorstore") is not None):
+        return st.session_state["vectorstore"], st.session_state["vs_chunks"]
 
     splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
     chunks = splitter.split_text(text)
     docs = [Document(page_content=c) for c in chunks]
 
     embeddings = OpenAIEmbeddings(openai_api_key=api_key)
-    # EphemeralClient = in-memory, no SQLite tenant setup needed (fixes chromadb 0.5.x error)
-    client = chromadb.EphemeralClient()
+    client = chromadb.EphemeralClient()  # created once, held in session_state
     vectorstore = Chroma.from_documents(docs, embeddings,
         collection_name="rag_demo", client=client)
 
-    return vectorstore, chunks, ChatOpenAI(model="gpt-4o-mini", openai_api_key=api_key, temperature=0)
+    st.session_state["vectorstore"] = vectorstore
+    st.session_state["vs_chunks"] = chunks
+    st.session_state["vs_hash"] = text_hash
+    return vectorstore, chunks
 
 
 def query_rag(question: str, vectorstore, llm):
@@ -122,7 +142,8 @@ with col1:
         if st.button("Run RAG Pipeline", type="primary", use_container_width=True):
             with st.spinner("Building index and retrieving…"):
                 try:
-                    vectorstore, chunks, llm = build_rag(text, api_key)
+                    vectorstore, chunks = build_rag_cached(text, api_key)
+                    llm = get_llm(api_key)
                     answer, docs = query_rag(question, vectorstore, llm)
                     st.session_state["rag_answer"] = answer
                     st.session_state["rag_chunks"] = [d.page_content for d in docs]
