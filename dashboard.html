@@ -284,8 +284,10 @@ function isProxyMode() {
 }
 
 function appUrl(app) {
-  if (isProxyMode()) return `/app/${app.id.toLowerCase()}/`;
-  return `http://${getHost()}:${app.port}`;
+  const path = `/app/${app.id.toLowerCase()}/`;
+  if (isProxyMode()) return path;
+  // Local mode: include the baseUrlPath — Streamlit 404s at / when baseUrlPath is set
+  return `http://${getHost()}:${app.port}${path}`;
 }
 
 // ── Status checking ───────────────────────────────────────────────────────────
@@ -299,7 +301,7 @@ async function checkPort(app) {
   try {
     const ctrl = new AbortController();
     const timeout = setTimeout(() => ctrl.abort(), 3000);
-    const url = isProxyMode() ? `/app/${app.id.toLowerCase()}/` : `http://${getHost()}:${app.port}`;
+    const url = appUrl(app);
     await fetch(url, { method:'GET', mode:'no-cors', signal: ctrl.signal });
     clearTimeout(timeout);
     dot.className = 'w-2 h-2 rounded-full bg-green-400 status-online';
